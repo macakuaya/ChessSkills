@@ -252,7 +252,7 @@ const navIcons = {
 
     <!-- Toggle button for components -->
     <button class="toggle-components" @click="showComponents = !showComponents">
-      {{ showComponents ? '✕ Hide' : '☰ Components' }}
+      {{ showComponents ? '✕' : '☰' }}
     </button>
 
     <section v-if="showComponents" class="components-showcase">
@@ -343,13 +343,14 @@ const navIcons = {
   position: fixed;
   top: 16px;
   right: 16px;
-  background: #81b64c;
+  background: transparent;
   color: #fff;
   border: none;
-  padding: 8px 16px;
+  padding: 8px;
   border-radius: 8px;
   font-family: inherit;
   font-weight: 600;
+  font-size: 20px;
   font-size: 14px;
   cursor: pointer;
   z-index: 1000;
@@ -357,7 +358,7 @@ const navIcons = {
 }
 
 .toggle-components:hover {
-  background: #6a9a3f;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .phone-frame {
