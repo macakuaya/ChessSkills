@@ -332,7 +332,7 @@ const navIcons = {
   background: #1f1f1f;
   min-height: 100vh;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   gap: 32px;
   padding: 24px;
