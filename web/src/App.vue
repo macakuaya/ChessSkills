@@ -108,6 +108,7 @@ const navIcons = {
 
       <section class="coach-area">
         <CoachBubble 
+          header-icon="/icons/brilliant.svg"
           header-text="The Immortal Game (1851)"
           eval-text=""
           message="Anderssen sacrificed a bishop, both rooks, and his queen to deliver checkmate!"
