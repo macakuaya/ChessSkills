@@ -44,6 +44,7 @@ const props = defineProps({
 .eval-segment.white {
   background: #ffffff;
   flex-shrink: 0;
+  transition: width 0.3s ease-out;
 }
 
 .eval-text {

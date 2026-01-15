@@ -19,12 +19,100 @@ const gameData = ref(null)
 const positions = ref([])
 const moveList = ref([])
 
+// Evaluation data for The Immortal Game (in centipawns, positive = White advantage)
+// Based on modern engine analysis
+const immortalGameEvals = [
+  0,      // Starting position
+  0.3,    // 1. e4
+  0.2,    // 1...e5
+  0.2,    // 2. f4
+  0.5,    // 2...exf4
+  0.4,    // 3. Bc4
+  0.8,    // 3...Qh4+
+  0.6,    // 4. Kf1
+  1.2,    // 4...b5
+  0.8,    // 5. Bxb5
+  0.9,    // 5...Nf6
+  0.7,    // 6. Nf3
+  1.5,    // 6...Qh6
+  1.2,    // 7. d3
+  1.8,    // 7...Nh5
+  1.5,    // 8. Nh4
+  2.0,    // 8...Qg5
+  1.8,    // 9. Nf5
+  2.2,    // 9...c6
+  1.9,    // 10. g4
+  2.5,    // 10...Nf6
+  2.2,    // 11. Rg1
+  2.8,    // 11...cxb5
+  2.5,    // 12. h4
+  3.0,    // 12...Qg6
+  2.7,    // 13. h5
+  3.2,    // 13...Qg5
+  2.9,    // 14. Qf3
+  3.5,    // 14...Ng8
+  3.2,    // 15. Bxf4
+  3.8,    // 15...Qf6
+  3.5,    // 16. Nc3
+  4.0,    // 16...Bc5
+  3.7,    // 17. Nd5
+  4.5,    // 17...Qxb2
+  5.0,    // 18. Bd6!! (first rook sacrifice)
+  6.0,    // 18...Bxg1 (Black takes rook)
+  8.0,    // 19. e5!! (second rook sacrifice offered)
+  7.0,    // 19...Qxa1+
+  9.0,    // 20. Ke2
+  8.5,    // 20...Na6
+  12.0,   // 21. Nxg7+
+  10.0,   // 21...Kd8
+  'M3',   // 22. Qf6+!! (queen sacrifice!)
+  'M2',   // 22...Nxf6
+  'M1',   // 23. Be7# (checkmate)
+]
+
 // Computed pieces based on current ply
 const pieces = computed(() => {
   if (!positions.value.length || activePly.value < 0) return []
   const posIndex = Math.min(activePly.value, positions.value.length - 1)
-  console.log(`Showing position ${posIndex} of ${positions.value.length} (activePly: ${activePly.value})`)
   return boardToPieces(positions.value[posIndex])
+})
+
+// Computed evaluation based on current ply
+const currentEval = computed(() => {
+  const evalIndex = Math.min(activePly.value, immortalGameEvals.length - 1)
+  return immortalGameEvals[evalIndex] || 0
+})
+
+// Format eval text for display
+const evalText = computed(() => {
+  const ev = currentEval.value
+  if (typeof ev === 'string') return ev // Already formatted (like 'M3')
+  if (ev === 0) return '0.0'
+  const sign = ev > 0 ? '+' : ''
+  return `${sign}${ev.toFixed(1)}`
+})
+
+// Calculate bar widths based on evaluation
+// Returns { blackWidth, whiteWidth } where total width is ~350px
+const evalBarWidths = computed(() => {
+  const ev = currentEval.value
+  const maxWidth = 349 // Total bar width
+  
+  // Handle mate scores
+  if (typeof ev === 'string' && ev.startsWith('M')) {
+    return { blackWidth: 1, whiteWidth: maxWidth - 1 } // Almost all white for winning
+  }
+  
+  // Convert centipawn eval to percentage (sigmoid-like curve)
+  // At +3.0, white has ~90% of bar; at -3.0, black has ~90%
+  const clampedEval = Math.max(-10, Math.min(10, ev))
+  const whitePercent = 50 + (clampedEval * 5) // Simple linear scaling
+  const clampedPercent = Math.max(5, Math.min(95, whitePercent))
+  
+  const whiteWidth = Math.round((clampedPercent / 100) * maxWidth)
+  const blackWidth = maxWidth - whiteWidth
+  
+  return { blackWidth, whiteWidth }
 })
 
 // Load PGN file
@@ -57,8 +145,6 @@ onMounted(() => {
   const baseUrl = import.meta.env.BASE_URL
   loadGame(`${baseUrl}games/immortal-game-1851.pgn`)
 })
-
-const evalText = 'M7'
 
 const coachMessages = [
   { id: 'm1', text: 'Nice find! That move wins material.' },
@@ -111,7 +197,7 @@ const navIcons = {
       </header>
 
       <section class="eval-section">
-        <EvalBar :eval-text="evalText" :black-width="92" :white-width="5" />
+        <EvalBar :eval-text="evalText" :black-width="evalBarWidths.blackWidth" :white-width="evalBarWidths.whiteWidth" />
       </section>
 
       <section class="coach-area">
