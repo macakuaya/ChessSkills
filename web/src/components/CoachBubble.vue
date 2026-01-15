@@ -1,32 +1,41 @@
 <script setup>
+import { computed } from 'vue'
+
+const base = import.meta.env.BASE_URL
+
 const props = defineProps({
-  headerIcon: { type: String, default: '/icons/move-inaccuracy.svg' },
+  headerIcon: { type: String, default: '' },
   headerText: { type: String, default: '' },
   evalText: { type: String, default: '' },
   message: { type: String, default: '' },
   showTip: { type: Boolean, default: true },
 })
+
+// Default to brilliant icon if no icon specified
+const iconSrc = computed(() => props.headerIcon || `${base}icons/brilliant.svg`)
+const avatarSrc = `${base}icons/coach-avatar.png`
+const tipSrc = `${base}icons/bubble-tip.svg`
 </script>
 
 <template>
   <div class="coach-container">
     <!-- Coach Avatar -->
     <div class="coach-avatar">
-      <img src="/icons/coach-avatar.png" alt="Coach" />
+      <img :src="avatarSrc" alt="Coach" />
     </div>
     
     <!-- Speech Bubble -->
     <div class="bubble">
       <!-- Tip pointing to avatar -->
       <div v-if="showTip" class="tip">
-        <img src="/icons/bubble-tip.svg" alt="" />
+        <img :src="tipSrc" alt="" />
       </div>
       
       <div class="bubble-content">
         <!-- Header with classification + eval -->
         <div v-if="headerText" class="bubble-header">
           <div class="classification">
-            <img v-if="headerIcon" :src="headerIcon" alt="" class="classification-icon" />
+            <img v-if="iconSrc" :src="iconSrc" alt="" class="classification-icon" />
             <span class="classification-text">{{ headerText }}</span>
           </div>
           <div v-if="evalText" class="eval-badge">

@@ -53,7 +53,9 @@ async function loadGame(pgnPath) {
 
 // Load The Immortal Game on mount
 onMounted(() => {
-  loadGame('/games/immortal-game-1851.pgn')
+  // Use base URL for GitHub Pages compatibility
+  const baseUrl = import.meta.env.BASE_URL
+  loadGame(`${baseUrl}games/immortal-game-1851.pgn`)
 })
 
 const evalText = 'M7'
@@ -70,10 +72,16 @@ const skillProgress = {
   counter: 10,
 }
 
+const baseUrl = import.meta.env.BASE_URL
 const navIcons = {
-  back: '/icons/arrow-back.svg',
-  search: '/icons/search.svg',
-  settings: '/icons/settings.svg',
+  back: `${baseUrl}icons/arrow-back.svg`,
+  search: `${baseUrl}icons/search.svg`,
+  settings: `${baseUrl}icons/settings.svg`,
+  statusRight: `${baseUrl}icons/status-right.svg`,
+  tabSkills: `${baseUrl}icons/tab-skills.svg`,
+  tabShow: `${baseUrl}icons/tab-show.svg`,
+  tabBest: `${baseUrl}icons/tab-best.svg`,
+  brilliant: `${baseUrl}icons/brilliant.svg`,
 }
 </script>
 
@@ -83,7 +91,7 @@ const navIcons = {
       <header class="nav-bar">
         <div class="status-bar">
           <div class="status-right">
-            <img alt="" src="/icons/status-right.svg" />
+            <img alt="" :src="navIcons.statusRight" />
           </div>
         </div>
         <div class="nav-header">
@@ -108,7 +116,7 @@ const navIcons = {
 
       <section class="coach-area">
         <CoachBubble 
-          header-icon="/icons/brilliant.svg"
+          :header-icon="navIcons.brilliant"
           header-text="The Immortal Game (1851)"
           eval-text=""
           message="Anderssen sacrificed a bishop, both rooks, and his queen to deliver checkmate!"
@@ -132,19 +140,19 @@ const navIcons = {
         <div class="tabs-container">
           <div class="tab-item">
             <div class="tab-icon">
-              <img src="/icons/tab-skills.svg" alt="" />
+              <img :src="navIcons.tabSkills" alt="" />
             </div>
             <span class="tab-label">Skills</span>
           </div>
           <div class="tab-item">
             <div class="tab-icon">
-              <img src="/icons/tab-show.svg" alt="" />
+              <img :src="navIcons.tabShow" alt="" />
             </div>
             <span class="tab-label">Show</span>
           </div>
           <div class="tab-item">
             <div class="tab-icon">
-              <img src="/icons/tab-best.svg" alt="" />
+              <img :src="navIcons.tabBest" alt="" />
             </div>
             <span class="tab-label">Best</span>
           </div>

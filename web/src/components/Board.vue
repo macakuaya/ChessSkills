@@ -45,7 +45,8 @@ const getPieceOnSquare = (square) => {
 // Supports both 'wK' and 'wk' formats
 const getPieceImage = (piece) => {
   const type = piece.type.toLowerCase()
-  return `/pieces/${type}.png`
+  const base = import.meta.env.BASE_URL
+  return `${base}pieces/${type}.png`
 }
 </script>
 
