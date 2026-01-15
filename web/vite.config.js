@@ -6,6 +6,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // GitHub Pages: macakuaya.github.io/ChessSkills/
+  base: '/ChessSkills/',
   plugins: [
     vue(),
     vueDevTools(),
