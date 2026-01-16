@@ -24,24 +24,12 @@ const tabs = [
   { id: 'endgames', label: 'Endgames' },
 ]
 
-// Skill icons - using placeholder SVGs for now
+// Skill icon paths
+const baseUrl = import.meta.env.BASE_URL
 const skillIcons = {
-  'royal-fork': `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20 8L24 16H16L20 8Z" fill="white"/>
-    <path d="M12 20L20 16L28 20L24 32H16L12 20Z" fill="white"/>
-    <circle cx="20" cy="12" r="2" fill="white"/>
-  </svg>`,
-  'absolute-pin': `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20 6L26 14H14L20 6Z" fill="white"/>
-    <rect x="16" y="14" width="8" height="20" rx="1" fill="white"/>
-    <circle cx="20" cy="10" r="3" fill="white"/>
-  </svg>`,
-  'trapped-piece': `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="8" y="28" width="24" height="4" rx="1" fill="white"/>
-    <path d="M12 28V20L16 16L20 20L24 16L28 20V28H12Z" fill="white"/>
-    <circle cx="14" cy="12" r="2" fill="white"/>
-    <circle cx="26" cy="12" r="2" fill="white"/>
-  </svg>`,
+  'royal-fork': `${baseUrl}icons/skill-fork.svg`,
+  'absolute-pin': `${baseUrl}icons/skill-pin.svg`,
+  'trapped-piece': `${baseUrl}icons/skill-trapped.svg`,
 }
 
 function getProgressPercent(current, max) {
@@ -86,7 +74,9 @@ function getProgressPercent(current, max) {
           class="skill-item"
         >
           <!-- Skill Icon -->
-          <div class="skill-icon" v-html="skillIcons[skill.icon] || skillIcons['royal-fork']"></div>
+          <div class="skill-icon">
+            <img :src="skillIcons[skill.icon] || skillIcons['royal-fork']" :alt="skill.name" />
+          </div>
           
           <!-- Skill Info -->
           <div class="skill-info">
@@ -243,9 +233,10 @@ function getProgressPercent(current, max) {
   justify-content: center;
 }
 
-.skill-icon :deep(svg) {
+.skill-icon img {
   width: 40px;
   height: 40px;
+  object-fit: contain;
 }
 
 .skill-info {
