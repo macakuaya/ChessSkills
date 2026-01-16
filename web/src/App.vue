@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { CcButton } from '@chesscom/design-system'
+import { CcButton, CcIcon } from '@chesscom/design-system'
 import '@chesscom/design-system/dist/variables.css'
 import '@chesscom/design-system/dist/cc-utils.css'
 import '@chesscom/design-system/dist/style.css'
@@ -150,6 +150,50 @@ onMounted(() => {
   loadGame(`${baseUrl}games/immortal-game-1851.pgn`)
 })
 
+// Auto-play until a classified move is found
+const isPlaying = ref(false)
+let playInterval = null
+
+function getMoveClassificationAtPly(ply) {
+  if (ply <= 0) return null
+  // ply 1 = white's first move (moveList[0].white)
+  // ply 2 = black's first move (moveList[0].black)
+  const moveIndex = Math.floor((ply - 1) / 2)
+  const isBlackMove = (ply - 1) % 2 === 1
+  
+  if (moveIndex >= moveList.value.length) return null
+  
+  const move = moveList.value[moveIndex]
+  // Only white moves have classifications in this game
+  if (!isBlackMove && move.classification) {
+    return move.classification
+  }
+  return null
+}
+
+function playNextMoves() {
+  if (isPlaying.value) return // Already playing
+  
+  const totalPlies = positions.value.length - 1
+  if (activePly.value >= totalPlies) return // Already at end
+  
+  isPlaying.value = true
+  
+  playInterval = setInterval(() => {
+    activePly.value++
+    
+    // Check if current move has a classification
+    const classification = getMoveClassificationAtPly(activePly.value)
+    
+    // Stop if we found a classified move or reached the end
+    if (classification || activePly.value >= totalPlies) {
+      clearInterval(playInterval)
+      playInterval = null
+      isPlaying.value = false
+    }
+  }, 100)
+}
+
 const coachMessages = [
   { id: 'm1', text: 'Nice find! That move wins material.' },
   { id: 'm2', text: 'Now convert carefully.' },
@@ -163,14 +207,20 @@ const skillProgress = {
 }
 
 const baseUrl = import.meta.env.BASE_URL
+
+// Design system glyph names (from Figma)
+const glyphs = {
+  back: 'arrow-line-left',
+  search: 'tool-magnifier-checker-1',
+  settings: 'utility-cogwheel',
+  tabSkills: 'element-star-fill',
+  tabShow: 'hand-pawn',
+  tabBest: 'tool-magnifier-star',
+}
+
+// Legacy icons (not in design system)
 const navIcons = {
-  back: `${baseUrl}icons/arrow-back.svg`,
-  search: `${baseUrl}icons/search.svg`,
-  settings: `${baseUrl}icons/settings.svg`,
   statusRight: `${baseUrl}icons/status-right.svg`,
-  tabSkills: `${baseUrl}icons/tab-skills.svg`,
-  tabShow: `${baseUrl}icons/tab-show.svg`,
-  tabBest: `${baseUrl}icons/tab-best.svg`,
   brilliant: `${baseUrl}icons/brilliant.svg`,
 }
 </script>
@@ -185,16 +235,16 @@ const navIcons = {
           </div>
         </div>
         <div class="nav-header">
-          <div class="nav-icon-button">
-            <img alt="Back" :src="navIcons.back" />
+          <div class="nav-icon-button nav-icon">
+            <CcIcon :name="glyphs.back" :size="20" />
           </div>
           <div class="nav-title">Game Review</div>
           <div class="nav-actions">
-            <div class="nav-icon-button">
-              <img alt="Search" :src="navIcons.search" />
+            <div class="nav-icon-button nav-icon">
+              <CcIcon :name="glyphs.search" :size="20" />
             </div>
-            <div class="nav-icon-button">
-              <img alt="Settings" :src="navIcons.settings" />
+            <div class="nav-icon-button nav-icon">
+              <CcIcon :name="glyphs.settings" :size="20" />
             </div>
           </div>
         </div>
@@ -229,24 +279,24 @@ const navIcons = {
       <footer class="tab-bar">
         <div class="tabs-container">
           <div class="tab-item">
-            <div class="tab-icon">
-              <img :src="navIcons.tabSkills" alt="" />
+            <div class="tab-icon tab-icon-glyph">
+              <CcIcon :name="glyphs.tabSkills" :size="24" />
             </div>
             <span class="tab-label">Skills</span>
           </div>
           <div class="tab-item">
-            <div class="tab-icon">
-              <img :src="navIcons.tabShow" alt="" />
+            <div class="tab-icon tab-icon-glyph">
+              <CcIcon :name="glyphs.tabShow" :size="24" />
             </div>
             <span class="tab-label">Show</span>
           </div>
           <div class="tab-item">
-            <div class="tab-icon">
-              <img :src="navIcons.tabBest" alt="" />
+            <div class="tab-icon tab-icon-glyph">
+              <CcIcon :name="glyphs.tabBest" :size="24" />
             </div>
             <span class="tab-label">Best</span>
           </div>
-          <CcButton variant="primary" size="x-large" class="tab-cta-ds">Next</CcButton>
+          <CcButton variant="primary" size="x-large" class="tab-cta-ds" @click="playNextMoves">Next</CcButton>
         </div>
         <div class="home-indicator"></div>
       </footer>
@@ -449,6 +499,16 @@ const navIcons = {
   display: block;
   opacity: 0.5;
   filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.2));
+}
+
+.nav-icon {
+  color: var(--color-icon-default);
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.2));
+}
+
+.tab-icon-glyph {
+  color: var(--color-icon-default);
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.14));
 }
 
 .eval-section {
