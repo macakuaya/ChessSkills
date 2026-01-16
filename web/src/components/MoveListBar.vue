@@ -10,7 +10,6 @@ const props = defineProps({
 const emit = defineEmits(['update:activePly'])
 
 // Refs for scrolling
-const scrollContainer = ref(null)
 const plyRefs = ref({})
 
 // Helper to check if a ply is selected
@@ -61,22 +60,15 @@ const setPlyRef = (plyIndex, el) => {
 
 // Scroll to center the active ply
 const scrollToActivePly = () => {
-  const container = scrollContainer.value
   const plyEl = plyRefs.value[props.activePly]
   
-  if (!container || !plyEl) return
+  if (!plyEl) return
   
-  const containerRect = container.getBoundingClientRect()
-  const plyRect = plyEl.getBoundingClientRect()
-  
-  // Calculate the scroll position to center the element
-  const plyCenter = plyRect.left + plyRect.width / 2
-  const containerCenter = containerRect.left + containerRect.width / 2
-  const scrollOffset = plyCenter - containerCenter
-  
-  container.scrollBy({
-    left: scrollOffset,
-    behavior: 'smooth'
+  // Use scrollIntoView which handles rapid updates better
+  plyEl.scrollIntoView({
+    behavior: 'smooth',
+    inline: 'center',
+    block: 'nearest'
   })
 }
 
@@ -99,7 +91,7 @@ watch(() => props.activePly, () => {
     
     <!-- Moves scroll area -->
     <div class="moves-container">
-      <div ref="scrollContainer" class="moves-scroll">
+      <div class="moves-scroll">
         <div
           v-for="(move, index) in moves"
           :key="`${move.index}-${index}`"

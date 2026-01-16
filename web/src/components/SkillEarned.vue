@@ -1,4 +1,6 @@
 <script setup>
+import { ref, watch } from 'vue'
+
 const props = defineProps({
   skillName: { type: String, default: 'Skewers' },
   current: { type: Number, default: 1 },
@@ -9,9 +11,32 @@ const props = defineProps({
 
 const baseUrl = import.meta.env.BASE_URL
 
-function getProgressPercent() {
+// Animated progress starts at current value, then grows +1
+const animatedProgress = ref(0)
+
+function getCurrentPercent() {
   return Math.round((props.current / props.max) * 100)
 }
+
+function getNextPercent() {
+  return Math.round(((props.current + 1) / props.max) * 100)
+}
+
+// Watch visibility to trigger progress animation
+watch(() => props.visible, (isVisible) => {
+  if (isVisible) {
+    // Start at current progress (1/10 = 10%)
+    animatedProgress.value = getCurrentPercent()
+    
+    // After slide-in completes (100ms), grow +1 point (to 2/10 = 20%)
+    setTimeout(() => {
+      animatedProgress.value = getNextPercent()
+    }, 100)
+  } else {
+    // Reset when hidden
+    animatedProgress.value = 0
+  }
+})
 </script>
 
 <template>
@@ -43,7 +68,7 @@ function getProgressPercent() {
         <div class="progress-bg"></div>
         <div 
           class="progress-fill" 
-          :style="{ width: getProgressPercent() + '%' }"
+          :style="{ width: animatedProgress + '%' }"
         ></div>
       </div>
     </div>
@@ -61,12 +86,15 @@ function getProgressPercent() {
   height: 100%;
   box-sizing: border-box;
   opacity: 0;
+  transform: translateY(24px);
   pointer-events: none;
-  transition: opacity 150ms cubic-bezier(0, 0, 0.2, 1);
+  transition: opacity 100ms cubic-bezier(0, 0, 0.4, 1),
+              transform 100ms cubic-bezier(0, 0, 0.4, 1);
 }
 
 .skill-earned.visible {
   opacity: 1;
+  transform: translateY(0);
   pointer-events: auto;
 }
 
@@ -163,6 +191,6 @@ function getProgressPercent() {
   bottom: 0;
   background: #81b64c;
   border-radius: 10px;
-  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 100ms cubic-bezier(0, 0, 0.4, 1);
 }
 </style>

@@ -355,7 +355,15 @@ function closeSkillEarned() {
 // Handle keyboard events
 function handleKeydown(event) {
   if (event.key === 'Escape') {
-    closeSkillEarned()
+    // Close skill earned overlay
+    if (showSkillEarned.value) {
+      closeSkillEarned()
+      return
+    }
+    // Close skills bottom sheet
+    if (showSkillsSheet.value) {
+      showSkillsSheet.value = false
+    }
   }
 }
 
