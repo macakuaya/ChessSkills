@@ -9,6 +9,12 @@ const props = defineProps({
       { name: 'Royal Fork', current: 9, max: 10, icon: 'royal-fork' },
       { name: 'Absolute Pin', current: 5, max: 10, icon: 'absolute-pin' },
       { name: 'Trapped Piece', current: 1, max: 10, icon: 'trapped-piece' },
+      { name: 'Skewer', current: 0, max: 10, icon: null },
+      { name: 'Knight Fork', current: 0, max: 10, icon: null },
+      { name: 'Fork', current: 0, max: 10, icon: null },
+      { name: 'Defend Piece', current: 0, max: 10, icon: null },
+      { name: 'Check', current: 0, max: 10, icon: null },
+      { name: 'Capture', current: 0, max: 10, icon: null },
     ]
   }
 })
@@ -16,6 +22,12 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const activeTab = ref('tactics')
+const isExpanded = ref(false)
+
+// Drag state
+const isDragging = ref(false)
+const dragStartY = ref(0)
+const dragCurrentY = ref(0)
 
 const tabs = [
   { id: 'openings', label: 'Openings' },
@@ -35,14 +47,66 @@ const skillIcons = {
 function getProgressPercent(current, max) {
   return Math.round((current / max) * 100)
 }
+
+// Drag handlers
+function onDragStart(e) {
+  isDragging.value = true
+  const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY
+  dragStartY.value = clientY
+  dragCurrentY.value = clientY
+}
+
+function onDragMove(e) {
+  if (!isDragging.value) return
+  const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY
+  dragCurrentY.value = clientY
+}
+
+function onDragEnd() {
+  if (!isDragging.value) return
+  
+  const dragDistance = dragStartY.value - dragCurrentY.value
+  const threshold = 30 // pixels
+  
+  if (dragDistance > threshold) {
+    // Dragged up - expand
+    isExpanded.value = true
+  } else if (dragDistance < -threshold) {
+    // Dragged down - collapse or close
+    if (isExpanded.value) {
+      isExpanded.value = false
+    } else {
+      emit('close')
+    }
+  }
+  
+  isDragging.value = false
+}
+
+// Simple tap to toggle
+function onTapToggle() {
+  isExpanded.value = !isExpanded.value
+}
 </script>
 
 <template>
-  <div class="skills-bottom-sheet" :class="{ open }">
+  <div 
+    class="skills-bottom-sheet" 
+    :class="{ open, expanded: isExpanded }"
+    @mouseup="onDragEnd"
+    @mouseleave="onDragEnd"
+    @touchend="onDragEnd"
+  >
     <!-- Top Container: Handle + Title + Tabs -->
-    <div class="sheet-top">
+    <div 
+      class="sheet-top"
+      @mousedown.prevent="onDragStart"
+      @mousemove="onDragMove"
+      @touchstart.passive="onDragStart"
+      @touchmove.passive="onDragMove"
+    >
       <!-- Drag Handle -->
-      <div class="drag-container">
+      <div class="drag-container" @click="onTapToggle">
         <div class="drag-handle"></div>
       </div>
       
@@ -72,10 +136,16 @@ function getProgressPercent(current, max) {
           v-for="skill in skills" 
           :key="skill.name"
           class="skill-item"
+          :class="{ locked: !skill.icon }"
         >
           <!-- Skill Icon -->
           <div class="skill-icon">
-            <img :src="skillIcons[skill.icon] || skillIcons['royal-fork']" :alt="skill.name" />
+            <img v-if="skill.icon" :src="skillIcons[skill.icon]" :alt="skill.name" />
+            <div v-else class="skill-icon-placeholder">
+              <svg viewBox="0 0 44 44" fill="none">
+                <rect x="2" y="2" width="40" height="40" rx="2" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-dasharray="4 4" fill="none"/>
+              </svg>
+            </div>
           </div>
           
           <!-- Skill Info -->
@@ -115,25 +185,34 @@ function getProgressPercent(current, max) {
   display: flex;
   flex-direction: column;
   width: 100%;
-  background: rgba(38, 36, 33, 0.75);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
+  background: #262421;
   border-radius: 10px 10px 0 0;
   overflow: hidden;
   transform: translateY(100%);
-  opacity: 0;
-  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 150ms cubic-bezier(0, 0, 0.2, 1);
 }
 
 .skills-bottom-sheet.open {
   transform: translateY(0);
-  opacity: 1;
+}
+
+.skills-bottom-sheet.expanded {
+  max-height: 80%;
+}
+
+.skills-bottom-sheet.expanded .skills-container {
+  overflow-y: auto;
 }
 
 /* Top Container */
 .sheet-top {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: grab;
+  user-select: none;
+}
+
+.sheet-top:active {
+  cursor: grabbing;
 }
 
 /* Drag Handle */
@@ -205,6 +284,14 @@ function getProgressPercent(current, max) {
 /* Skills Container */
 .skills-container {
   padding: 0 12px;
+  max-height: 212px; /* Fits exactly 3 skill items: 3*44px + 2*24px gaps + 32px padding */
+  overflow: hidden;
+  transition: max-height 150ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.skills-bottom-sheet.expanded .skills-container {
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 .skills-list {
@@ -237,6 +324,29 @@ function getProgressPercent(current, max) {
   width: 40px;
   height: 40px;
   object-fit: contain;
+}
+
+.skill-icon-placeholder {
+  width: 44px;
+  height: 44px;
+}
+
+.skill-icon-placeholder svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Locked/empty skill styles */
+.skill-item.locked .skill-name {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.skill-item.locked .skill-counter {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.skill-item.locked .progress-bg {
+  opacity: 0.5;
 }
 
 .skill-info {

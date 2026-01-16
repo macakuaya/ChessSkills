@@ -354,11 +354,13 @@ watch(activePly, (newPly, oldPly) => {
       </section>
 
       <!-- Skills Bottom Sheet Overlay -->
-      <div 
-        v-if="showSkillsSheet" 
-        class="sheet-overlay" 
-        @click="showSkillsSheet = false"
-      ></div>
+      <Transition name="overlay">
+        <div 
+          v-if="showSkillsSheet" 
+          class="sheet-overlay" 
+          @click="showSkillsSheet = false"
+        ></div>
+      </Transition>
       
       <!-- Skills Bottom Sheet -->
       <SkillsBottomSheet 
@@ -526,6 +528,17 @@ watch(activePly, (newPly, oldPly) => {
   background: rgba(0, 0, 0, 0.5);
   z-index: 10;
   cursor: pointer;
+}
+
+/* Overlay transition */
+.overlay-enter-active,
+.overlay-leave-active {
+  transition: opacity 150ms cubic-bezier(0, 0, 0.4, 1);
+}
+
+.overlay-enter-from,
+.overlay-leave-to {
+  opacity: 0;
 }
 
 /* Skills Bottom Sheet */
