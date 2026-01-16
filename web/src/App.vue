@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { CcButton, CcIcon } from '@chesscom/design-system'
 import '@chesscom/design-system/dist/variables.css'
 import '@chesscom/design-system/dist/cc-utils.css'
@@ -223,6 +223,69 @@ const navIcons = {
   statusRight: `${baseUrl}icons/status-right.svg`,
   brilliant: `${baseUrl}icons/brilliant.svg`,
 }
+
+// Chess sounds from design system CDN
+const SOUND_BASE_URL = 'https://www.chess.com/bundles/web/sounds/mp3/'
+const SOUND_FILES = {
+  move: 'move-self.mp3',
+  capture: 'capture.mp3',
+  castle: 'castle.mp3',
+  check: 'move-check.mp3',
+  promote: 'promote.mp3',
+}
+
+// Play sound by type (creates audio on demand for better browser support)
+function playSound(type) {
+  const file = SOUND_FILES[type]
+  if (!file) return
+  
+  const audio = new Audio(`${SOUND_BASE_URL}${file}`)
+  audio.volume = 0.7
+  audio.play()
+    .then(() => console.log(`Played ${type} sound`))
+    .catch(err => console.warn(`Failed to play ${type}:`, err.message))
+}
+
+// Play sound based on move notation
+function playMoveSound(moveStr) {
+  if (!moveStr) return
+  
+  console.log('Playing sound for move:', moveStr)
+  
+  // Priority: checkmate/check > castle > capture > promote > normal move
+  if (moveStr.includes('#') || moveStr.includes('+')) {
+    playSound('check')
+  } else if (moveStr === 'O-O' || moveStr === 'O-O-O' || moveStr === '0-0' || moveStr === '0-0-0') {
+    playSound('castle')
+  } else if (moveStr.includes('x')) {
+    playSound('capture')
+  } else if (moveStr.includes('=')) {
+    playSound('promote')
+  } else {
+    playSound('move')
+  }
+}
+
+// Get move notation at a given ply
+function getMoveAtPly(ply) {
+  if (ply <= 0) return null
+  const moveIndex = Math.floor((ply - 1) / 2)
+  const isBlackMove = (ply - 1) % 2 === 1
+  
+  if (moveIndex >= moveList.value.length) return null
+  
+  const move = moveList.value[moveIndex]
+  return isBlackMove ? move.black : move.white
+}
+
+// Watch for ply changes to play sounds
+watch(activePly, (newPly, oldPly) => {
+  // Only play sound when moving forward
+  if (newPly > oldPly) {
+    const moveNotation = getMoveAtPly(newPly)
+    playMoveSound(moveNotation)
+  }
+})
 </script>
 
 <template>
