@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { CcButton, CcIcon } from '@chesscom/design-system'
 import '@chesscom/design-system/dist/variables.css'
 import '@chesscom/design-system/dist/cc-utils.css'
@@ -14,11 +14,22 @@ import BottomSheet from './components/BottomSheet.vue'
 import MoveMarker from './components/MoveMarker.vue'
 import MoveClassificationBadge from './components/MoveClassificationBadge.vue'
 import SkillsBottomSheet from './components/SkillsBottomSheet.vue'
+import SkillEarned from './components/SkillEarned.vue'
 import { parsePGN, calculatePositions, boardToPieces, markBrilliantMoves } from './utils/chess.js'
 
 const showComponents = ref(false)
 const activePly = ref(0)
 const showSkillsSheet = ref(false)
+
+// Skill earned animation state
+const showMoveList = ref(true)
+const showSkillEarned = ref(false)
+const skillEarnedData = ref({
+  skillName: 'Skewers',
+  current: 1,
+  max: 10,
+  icon: 'skill-fork' // Using fork icon temporarily until skewer icon is exported
+})
 
 // Game data
 const gameData = ref(null)
@@ -150,6 +161,9 @@ onMounted(() => {
   // Use base URL for GitHub Pages compatibility
   const baseUrl = import.meta.env.BASE_URL
   loadGame(`${baseUrl}games/immortal-game-1851.pgn`)
+  
+  // Listen for keyboard events
+  window.addEventListener('keydown', handleKeydown)
 })
 
 // Auto-play until a classified move is found
@@ -291,14 +305,63 @@ watch(activePly, (newPly, oldPly) => {
     // Moving forward - play the sound of the move just made
     const moveNotation = getMoveAtPly(newPly)
     playMoveSound(moveNotation)
+    
+    // Check for skill earned trigger at move 18. Bd6 (ply 35)
+    if (newPly === 35 && !showSkillEarned.value) {
+      triggerSkillEarned()
+    }
   } else if (newPly > 0) {
     // Moving backward - play a simple move sound for the position we're at
     const moveNotation = getMoveAtPly(newPly)
     playMoveSound(moveNotation)
+    
+    // Reset skill earned if going back before the trigger point
+    if (newPly < 35) {
+      showMoveList.value = true
+      showSkillEarned.value = false
+    }
   } else {
     // Back to starting position - play a simple move sound
     playSound('move')
+    showMoveList.value = true
+    showSkillEarned.value = false
   }
+})
+
+// Trigger skill earned animation
+function triggerSkillEarned() {
+  // After 200ms delay
+  setTimeout(() => {
+    // Fade out move list
+    showMoveList.value = false
+    
+    // After move list fades out (100ms), show skill earned
+    setTimeout(() => {
+      showSkillEarned.value = true
+    }, 100)
+  }, 200)
+}
+
+// Close skill earned and show move list
+function closeSkillEarned() {
+  if (showSkillEarned.value) {
+    showSkillEarned.value = false
+    setTimeout(() => {
+      showMoveList.value = true
+    }, 100)
+  }
+}
+
+// Handle keyboard events
+function handleKeydown(event) {
+  if (event.key === 'Escape') {
+    closeSkillEarned()
+  }
+}
+
+// Cleanup on unmount
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
 })
 </script>
 
@@ -346,10 +409,20 @@ watch(activePly, (newPly, oldPly) => {
       </section>
 
       <section class="content-area">
-        <MoveListBar
-          :moves="moveList"
-          v-model:active-ply="activePly"
-          :show-icons="true"
+        <div class="move-list-wrapper" :class="{ 'fade-out': !showMoveList }">
+          <MoveListBar
+            :moves="moveList"
+            v-model:active-ply="activePly"
+            :show-icons="true"
+          />
+        </div>
+        <SkillEarned
+          class="skill-earned-overlay"
+          :skill-name="skillEarnedData.skillName"
+          :current="skillEarnedData.current"
+          :max="skillEarnedData.max"
+          :icon="skillEarnedData.icon"
+          :visible="showSkillEarned"
         />
       </section>
 
@@ -667,6 +740,28 @@ watch(activePly, (newPly, oldPly) => {
   gap: 8px;
   justify-content: center;
   align-items: center;
+  position: relative;
+}
+
+/* Skill earned overlay - absolute positioned to not affect layout */
+.skill-earned-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+
+/* Move list fade animation */
+.move-list-wrapper {
+  width: 100%;
+  opacity: 1;
+  transition: opacity 100ms cubic-bezier(0, 0, 0.4, 1);
+}
+
+.move-list-wrapper.fade-out {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .marker-row {
@@ -696,32 +791,7 @@ watch(activePly, (newPly, oldPly) => {
   gap: 12px;
 }
 
-.skill-earned {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 10px 12px;
-  display: grid;
-  gap: 8px;
-  color: #ffffff;
-}
-
-.skill-earned-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.skill-counter {
-  color: #b2e068;
-}
-
-.skill-notes {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
-}
+/* SkillEarned component handles its own styling */
 
 .move-list-transition {
   display: grid;
