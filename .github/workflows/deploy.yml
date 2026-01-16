@@ -10,7 +10,6 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  packages: read
 
 concurrency:
   group: pages
@@ -36,7 +35,7 @@ jobs:
         working-directory: ./web
         run: npm ci
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.CHESSCOM_NPM_TOKEN }}
 
       - name: Build
         working-directory: ./web
