@@ -1,5 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { CcButton } from '@chesscom/design-system'
+import '@chesscom/design-system/dist/variables.css'
+import '@chesscom/design-system/dist/cc-utils.css'
+import '@chesscom/design-system/dist/style.css'
 import EvalBar from './components/EvalBar.vue'
 import CoachBubble from './components/CoachBubble.vue'
 import Board from './components/Board.vue'
@@ -242,9 +246,7 @@ const navIcons = {
             </div>
             <span class="tab-label">Best</span>
           </div>
-          <button class="tab-cta">
-            <span>Next</span>
-          </button>
+          <CcButton variant="primary" size="x-large" class="tab-cta-ds">Next</CcButton>
         </div>
         <div class="home-indicator"></div>
       </footer>
@@ -682,35 +684,8 @@ const navIcons = {
   white-space: nowrap;
 }
 
-.tab-cta {
+.tab-cta-ds {
   flex: 1;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  background: url('/icons/btn-next-bg.png') center/cover;
-  box-shadow: 
-    0 1px 2px rgba(0, 0, 0, 0.14),
-    0 2px 4px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(178, 224, 104, 0.4),
-    inset 0 -1px 0 #45753c,
-    inset 0 2px 4px rgba(178, 224, 104, 0.5),
-    inset 0 -2px 4px rgba(69, 117, 60, 0.5);
-}
-
-.tab-cta span {
-  font-family: 'Chess Sans', sans-serif;
-  font-weight: 800;
-  font-size: 22px;
-  line-height: 28px;
-  color: #fff;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
 .home-indicator {

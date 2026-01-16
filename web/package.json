@@ -12,6 +12,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chesscom/design-system": "^0.21.1",
+    "@chesscom/design-system-mcp": "^0.1.2",
     "vue": "^3.5.26"
   },
   "devDependencies": {

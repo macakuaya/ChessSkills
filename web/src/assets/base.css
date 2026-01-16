@@ -36,6 +36,11 @@
   --section-gap: 160px;
 }
 
+/* Design system expects 1rem = 10px */
+html {
+  font-size: 62.5%; /* 10px base for rem calculations */
+}
+
 *,
 *::before,
 *::after {
