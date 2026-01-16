@@ -13,10 +13,12 @@ import SkillLeaveBar from './components/SkillLeaveBar.vue'
 import BottomSheet from './components/BottomSheet.vue'
 import MoveMarker from './components/MoveMarker.vue'
 import MoveClassificationBadge from './components/MoveClassificationBadge.vue'
+import SkillsBottomSheet from './components/SkillsBottomSheet.vue'
 import { parsePGN, calculatePositions, boardToPieces, markBrilliantMoves } from './utils/chess.js'
 
 const showComponents = ref(false)
 const activePly = ref(0)
+const showSkillsSheet = ref(false)
 
 // Game data
 const gameData = ref(null)
@@ -351,9 +353,23 @@ watch(activePly, (newPly, oldPly) => {
         />
       </section>
 
+      <!-- Skills Bottom Sheet Overlay -->
+      <div 
+        v-if="showSkillsSheet" 
+        class="sheet-overlay" 
+        @click="showSkillsSheet = false"
+      ></div>
+      
+      <!-- Skills Bottom Sheet -->
+      <SkillsBottomSheet 
+        :open="showSkillsSheet" 
+        class="skills-sheet"
+        @close="showSkillsSheet = false"
+      />
+
       <footer class="tab-bar">
         <div class="tabs-container">
-          <div class="tab-item">
+          <div class="tab-item" @click="showSkillsSheet = !showSkillsSheet">
             <div class="tab-icon tab-icon-glyph">
               <CcIcon :name="glyphs.tabSkills" :size="24" />
             </div>
@@ -499,6 +515,27 @@ watch(activePly, (newPly, oldPly) => {
   flex-direction: column;
   border: 1px solid rgba(255, 255, 255, 0.06);
   color: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Skills Bottom Sheet Overlay */
+.sheet-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10;
+  cursor: pointer;
+}
+
+/* Skills Bottom Sheet */
+.skills-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 70%;
 }
 
 .nav-bar {
@@ -795,6 +832,7 @@ watch(activePly, (newPly, oldPly) => {
   gap: 4px;
   min-width: 64px;
   height: 48px;
+  cursor: pointer;
 }
 
 .tab-icon {
