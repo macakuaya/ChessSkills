@@ -280,10 +280,22 @@ function getMoveAtPly(ply) {
 
 // Watch for ply changes to play sounds
 watch(activePly, (newPly, oldPly) => {
-  // Only play sound when moving forward
+  if (newPly === oldPly) return
+  
+  // Play sound for the move at the new position
+  // When going forward: play the move we just made
+  // When going backward: play the move we landed on (or just a move sound)
   if (newPly > oldPly) {
+    // Moving forward - play the sound of the move just made
     const moveNotation = getMoveAtPly(newPly)
     playMoveSound(moveNotation)
+  } else if (newPly > 0) {
+    // Moving backward - play a simple move sound for the position we're at
+    const moveNotation = getMoveAtPly(newPly)
+    playMoveSound(moveNotation)
+  } else {
+    // Back to starting position - play a simple move sound
+    playSound('move')
   }
 })
 </script>
