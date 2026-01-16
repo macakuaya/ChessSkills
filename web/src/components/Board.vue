@@ -6,6 +6,7 @@ const props = defineProps({
   pieces: { type: Array, default: () => [] },
   highlights: { type: Array, default: () => [] },
   lastMove: { type: Object, default: null }, // { from: 'e2', to: 'e4' }
+  skillHighlight: { type: String, default: null }, // Square to highlight with skill animation (e.g., 'd6')
 })
 
 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
@@ -37,6 +38,10 @@ const isLastMoveSquare = (square) => {
   return props.lastMove.from === square || props.lastMove.to === square
 }
 
+const hasSkillHighlight = (square) => {
+  return props.skillHighlight === square
+}
+
 const getPieceOnSquare = (square) => {
   return props.pieces.find(p => p.square === square)
 }
@@ -65,6 +70,12 @@ const getPieceImage = (piece) => {
         }"
         :data-square="square"
       >
+        <!-- Skill Highlight Overlay -->
+        <div 
+          v-if="hasSkillHighlight(square)" 
+          class="skill-highlight-overlay"
+        ></div>
+
         <!-- Piece -->
         <img 
           v-if="getPieceOnSquare(square)" 
@@ -157,5 +168,25 @@ const getPieceImage = (piece) => {
 
 .square.light .coord {
   color: #779556;
+}
+
+/* Skill Highlight Overlay */
+.skill-highlight-overlay {
+  position: absolute;
+  inset: 0;
+  background: #E3AA24; /* color-gold-300 */
+  opacity: 0;
+  z-index: 2;
+  pointer-events: none;
+  animation: skill-highlight-fade-in 300ms cubic-bezier(0, 0, 0.4, 1) forwards;
+}
+
+@keyframes skill-highlight-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.8;
+  }
 }
 </style>

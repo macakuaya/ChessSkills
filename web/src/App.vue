@@ -24,6 +24,7 @@ const showSkillsSheet = ref(false)
 // Skill earned animation state
 const showMoveList = ref(true)
 const showSkillEarned = ref(false)
+const skillHighlightSquare = ref(null) // Square to highlight on board (e.g., 'd6')
 const skillEarnedData = ref({
   skillName: 'Skewers',
   current: 1,
@@ -319,17 +320,22 @@ watch(activePly, (newPly, oldPly) => {
     if (newPly < 35) {
       showMoveList.value = true
       showSkillEarned.value = false
+      skillHighlightSquare.value = null
     }
   } else {
     // Back to starting position - play a simple move sound
     playSound('move')
     showMoveList.value = true
     showSkillEarned.value = false
+    skillHighlightSquare.value = null
   }
 })
 
 // Trigger skill earned animation
 function triggerSkillEarned() {
+  // Highlight the skill square on the board (Bd6 = d6)
+  skillHighlightSquare.value = 'd6'
+  
   // After 200ms delay
   setTimeout(() => {
     // Fade out move list
@@ -346,6 +352,7 @@ function triggerSkillEarned() {
 function closeSkillEarned() {
   if (showSkillEarned.value) {
     showSkillEarned.value = false
+    skillHighlightSquare.value = null
     setTimeout(() => {
       showMoveList.value = true
     }, 100)
@@ -413,7 +420,7 @@ onUnmounted(() => {
       </section>
 
       <section class="board-area">
-        <Board :pieces="pieces" :size="375" />
+        <Board :pieces="pieces" :size="375" :skill-highlight="skillHighlightSquare" />
       </section>
 
       <section class="content-area">
