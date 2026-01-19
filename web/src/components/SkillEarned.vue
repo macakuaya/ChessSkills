@@ -205,7 +205,9 @@ watch(() => props.visible, (isVisible) => {
   position: relative;
   display: inline-flex;
   flex-direction: column;
+  align-items: flex-end;
   height: 20px;
+  min-width: 1.2em; /* Ensure space for double digits */
   overflow: hidden;
 }
 
@@ -214,6 +216,7 @@ watch(() => props.visible, (isVisible) => {
   height: 20px;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   transition: transform 500ms cubic-bezier(0, 0, 0.2, 1),
               opacity 500ms cubic-bezier(0, 0, 0.2, 1);
 }

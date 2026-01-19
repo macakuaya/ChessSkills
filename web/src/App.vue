@@ -85,6 +85,25 @@ const ftueSkillsList = computed(() => [
   { name: 'Checkmate', current: checkmateCount.value, max: 10, icon: 'checkmate-dark' },
 ])
 
+// End of FTUE skills list - Checkmate first (in progress), then completed skills
+const endOfFtueSkillsList = computed(() => [
+  { name: 'Checkmate', current: checkmateCount.value, max: 10, icon: 'checkmate-dark' },
+  { name: 'Capture', current: 10, max: 10, icon: 'capturing-dark-bishop', completed: true },
+  { name: 'Check', current: 10, max: 10, icon: 'check', completed: true },
+])
+
+// Get current skills list based on prototype
+const currentSkillsList = computed(() => {
+  if (selectedPrototype.value === 'ftue') return ftueSkillsList.value
+  if (selectedPrototype.value === 'end-of-ftue') return endOfFtueSkillsList.value
+  return skillsList.value
+})
+
+// Check if tabs should be shown (hidden for FTUE-style prototypes)
+const showSkillsTabs = computed(() => {
+  return selectedPrototype.value !== 'ftue' && selectedPrototype.value !== 'end-of-ftue'
+})
+
 // Game data
 const gameData = ref(null)
 const positions = ref([])
@@ -189,10 +208,13 @@ const evalBarWidths = computed(() => {
 // Skill moves for different prototypes
 const skillPointEarnedMoves = [18, 19, 22] // Rook sac #1, Rook sac #2, Queen sac
 const ftueMoves = [5, 21, 23] // First capture (Bxb5), First check (Nxg7+), Checkmate (Be7#)
+const endOfFtueMoves = [23] // Only Checkmate (Be7#)
 
 // Get skill moves based on prototype
 function getSkillMoves() {
-  return selectedPrototype.value === 'ftue' ? ftueMoves : skillPointEarnedMoves
+  if (selectedPrototype.value === 'ftue') return ftueMoves
+  if (selectedPrototype.value === 'end-of-ftue') return endOfFtueMoves
+  return skillPointEarnedMoves
 }
 
 // Load PGN file
@@ -356,7 +378,7 @@ function getMoveAtPly(ply) {
 }
 
 // Watch for prototype changes to update skill moves
-watch(selectedPrototype, () => {
+watch(selectedPrototype, (newPrototype) => {
   if (gameData.value) {
     moveList.value = markBrilliantMoves(gameData.value.moves, getSkillMoves())
     // Reset animation states
@@ -371,6 +393,11 @@ watch(selectedPrototype, () => {
     showBoardCelebration.value = false
     showContinueButton.value = false
     activePly.value = 0
+    
+    // Set initial state for end-of-ftue prototype
+    if (newPrototype === 'end-of-ftue') {
+      checkmateCount.value = 9 // Start at 9/10
+    }
   }
 })
 
@@ -398,6 +425,12 @@ watch(activePly, (newPly, oldPly) => {
       }
       // 23. Be7# (ply 45) - Checkmate
       if (newPly === 45 && checkmateCount.value === 0 && !showSkillEarned.value) {
+        triggerSkillEarned('e7', 45, 'checkmate')
+      }
+    } else if (selectedPrototype.value === 'end-of-ftue') {
+      // End of FTUE - only checkmate trigger
+      // 23. Be7# (ply 45) - Checkmate (starts at 9/10, goes to 10/10)
+      if (newPly === 45 && checkmateCount.value === 9 && !showSkillEarned.value) {
         triggerSkillEarned('e7', 45, 'checkmate')
       }
     } else {
@@ -450,6 +483,11 @@ watch(activePly, (newPly, oldPly) => {
       } else if (newPly < 41) {
         resetAnimationState()
       } else if (newPly < 45) {
+        resetAnimationState()
+      }
+    } else if (selectedPrototype.value === 'end-of-ftue') {
+      // End of FTUE skill plies: only 45 (checkmate)
+      if (newPly < 45) {
         resetAnimationState()
       }
     } else {
@@ -815,8 +853,8 @@ onUnmounted(() => {
       <!-- Skills Bottom Sheet -->
       <SkillsBottomSheet 
         :open="showSkillsSheet" 
-        :skills="selectedPrototype === 'ftue' ? ftueSkillsList : skillsList"
-        :show-tabs="selectedPrototype !== 'ftue'"
+        :skills="currentSkillsList"
+        :show-tabs="showSkillsTabs"
         class="skills-sheet"
         @close="showSkillsSheet = false"
       />

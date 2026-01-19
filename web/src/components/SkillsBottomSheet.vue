@@ -158,18 +158,18 @@ function onTapToggle() {
           
           <!-- Skill Info -->
           <div class="skill-info">
-            <!-- Label + Counter -->
+            <!-- Label + Counter (counter hidden for completed skills) -->
             <div class="skill-header">
               <span class="skill-name">{{ skill.name }}</span>
-              <span class="skill-counter">
+              <span v-if="!skill.completed" class="skill-counter">
                 <span class="current">{{ skill.current }}</span>
                 <span class="separator">/</span>
                 <span class="max">{{ skill.max }}</span>
               </span>
             </div>
             
-            <!-- Progress Bar -->
-            <div class="progress-bar">
+            <!-- Progress Bar (hidden for completed skills) -->
+            <div v-if="!skill.completed" class="progress-bar">
               <div class="progress-bg"></div>
               <div 
                 class="progress-fill" 
