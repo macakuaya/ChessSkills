@@ -59,7 +59,8 @@ const showSkillUnlockedModal = ref(false)
 const skillUnlockedData = ref({
   skillName: 'Trapped Piece',
   skillDescription: 'A piece that has no safe squares to move to and will be captured, usually because it\'s surrounded by enemy pawns or pieces blocking its escape routes.',
-  skillImage: ''
+  skillImage: '',
+  showShareButton: false
 })
 
 // Brilliant animation state (triggers after skill animation)
@@ -108,11 +109,25 @@ const masteredSkillSkillsList = computed(() => [
   { name: 'Skewer', current: 1, max: 10, icon: null },
 ])
 
+// All Skills Mastered skills list - All skills completed except Queen Sacrifice at 9/10
+const allSkillsMasteredSkillsList = computed(() => [
+  { name: 'Queen Sacrifice', current: queenSacrificeCount.value, max: 10, icon: 'queen-sacrifice' },
+  { name: 'Royal Fork', current: 10, max: 10, icon: 'royal-fork', completed: true },
+  { name: 'Rook Sacrifice', current: 10, max: 10, icon: 'rook-sacrifice', completed: true },
+  { name: 'Skewer', current: 10, max: 10, icon: 'skewer', completed: true },
+  { name: 'Knight Fork', current: 10, max: 10, icon: 'knight-fork', completed: true },
+  { name: 'Fork', current: 10, max: 10, icon: 'fork', completed: true },
+  { name: 'Defend Piece', current: 10, max: 10, icon: 'defend-piece', completed: true },
+  { name: 'Check', current: 10, max: 10, icon: 'check', completed: true },
+  { name: 'Capture', current: 10, max: 10, icon: 'capturing-dark-bishop', completed: true },
+])
+
 // Get current skills list based on prototype
 const currentSkillsList = computed(() => {
   if (selectedPrototype.value === 'ftue') return ftueSkillsList.value
   if (selectedPrototype.value === 'end-of-ftue') return endOfFtueSkillsList.value
   if (selectedPrototype.value === 'mastered-skill') return masteredSkillSkillsList.value
+  if (selectedPrototype.value === 'all-skills-mastered') return allSkillsMasteredSkillsList.value
   return skillsList.value
 })
 
@@ -227,12 +242,14 @@ const skillPointEarnedMoves = [18, 19, 22] // Rook sac #1, Rook sac #2, Queen sa
 const ftueMoves = [5, 21, 23] // First capture (Bxb5), First check (Nxg7+), Checkmate (Be7#)
 const endOfFtueMoves = [23] // Only Checkmate (Be7#)
 const masteredSkillMoves = [18, 19] // Rook sac #1, Rook sac #2 (mastery on second)
+const allSkillsMasteredMoves = [22] // Only Queen sac (completing all skills)
 
 // Get skill moves based on prototype
 function getSkillMoves() {
   if (selectedPrototype.value === 'ftue') return ftueMoves
   if (selectedPrototype.value === 'end-of-ftue') return endOfFtueMoves
   if (selectedPrototype.value === 'mastered-skill') return masteredSkillMoves
+  if (selectedPrototype.value === 'all-skills-mastered') return allSkillsMasteredMoves
   return skillPointEarnedMoves
 }
 
@@ -418,6 +435,8 @@ function initializePrototypeState(prototype) {
     checkmateCount.value = 9 // Start at 9/10
   } else if (prototype === 'mastered-skill') {
     rookSacrificeCount.value = 8 // Start at 8/10, will master after 2 sacrifices
+  } else if (prototype === 'all-skills-mastered') {
+    queenSacrificeCount.value = 9 // Start at 9/10, completing this masters ALL skills
   }
 }
 
@@ -469,6 +488,12 @@ watch(activePly, (newPly, oldPly) => {
       // 19. e5 (ply 37) - second rook sacrifice (9 → 10, mastery!)
       if (newPly === 37 && rookSacrificeCount.value === 9 && !showSkillEarned.value) {
         triggerSkillEarned('e5', 37, 'rook')
+      }
+    } else if (selectedPrototype.value === 'all-skills-mastered') {
+      // All Skills Mastered - only Queen Sacrifice at 9/10
+      // 22. Qf6+ (ply 43) - queen sacrifice (9 → 10, completes ALL skills!)
+      if (newPly === 43 && queenSacrificeCount.value === 9 && !showSkillEarned.value) {
+        triggerSkillEarned('f6', 43, 'queen')
       }
     } else {
       // Skill Point Earned triggers
@@ -532,6 +557,11 @@ watch(activePly, (newPly, oldPly) => {
       if (newPly < 35) {
         resetAnimationState()
       } else if (newPly < 37) {
+        resetAnimationState()
+      }
+    } else if (selectedPrototype.value === 'all-skills-mastered') {
+      // All Skills Mastered plies: only 43 (queen sacrifice)
+      if (newPly < 43) {
         resetAnimationState()
       }
     } else {
@@ -713,6 +743,16 @@ function onCounterComplete() {
     showBoardCelebration.value = true
     showContinueButton.value = true
   }
+  // All Skills Mastered celebration (queen sacrifice completes ALL skills)
+  else if (selectedPrototype.value === 'all-skills-mastered' && currentSkillType.value === 'queen' && queenSacrificeCount.value === 9) {
+    boardCelebrationData.value = {
+      image: `${import.meta.env.BASE_URL}icons/white_queen.png`,
+      title: 'You mastered a Skill!',
+      subtitle: ''
+    }
+    showBoardCelebration.value = true
+    showContinueButton.value = true
+  }
   // FTUE first skill celebration
   else if (!hasShownFirstSkillCelebration.value && selectedPrototype.value === 'ftue') {
     hasShownFirstSkillCelebration.value = true
@@ -741,6 +781,46 @@ function onContinueClick() {
   const isMasteryCelebration = selectedPrototype.value === 'mastered-skill' && 
     savedSkillType === 'rook' && 
     rookSacrificeCount.value === 9
+  
+  // Check if this is an "all skills mastered" celebration (queen sacrifice completes ALL skills)
+  const isAllSkillsMastered = selectedPrototype.value === 'all-skills-mastered' && 
+    savedSkillType === 'queen' && 
+    queenSacrificeCount.value === 9
+  
+  if (isAllSkillsMastered) {
+    // Go directly to the hero modal (no intermediate overlay)
+    showSkillEarned.value = false
+    skillHighlightSquare.value = null
+    showExplosion.value = false
+    showContinueButton.value = false
+    
+    // Update counter
+    queenSacrificeCount.value++
+    
+    // Mark ply as revealed
+    if (savedPly && !revealedSkillPlies.value.includes(savedPly)) {
+      revealedSkillPlies.value = [...revealedSkillPlies.value, savedPly]
+    }
+    
+    currentAnimatingPly.value = null
+    currentSkillType.value = null
+    
+    // Show the hero modal with "Skills Complete" message and Share button
+    skillUnlockedData.value = {
+      skillName: 'Skills Complete',
+      skillDescription: 'Impressive! You completed all the challenges. Now go show off your new skills.',
+      skillImage: '',
+      showShareButton: true
+    }
+    showSkillUnlockedModal.value = true
+    
+    // Hide board celebration after modal slide-in completes (250ms)
+    setTimeout(() => {
+      showBoardCelebration.value = false
+    }, 250)
+    
+    return
+  }
   
   if (isMasteryCelebration) {
     // Transition to "New Skill Unlocked" celebration
@@ -775,7 +855,8 @@ function onContinueClick() {
       skillUnlockedData.value = {
         skillName: 'Trapped Piece',
         skillDescription: 'A piece that has no safe squares to move to and will be captured, usually because it\'s surrounded by enemy pawns or pieces blocking its escape routes.',
-        skillImage: ''
+        skillImage: '',
+        showShareButton: false
       }
       showSkillUnlockedModal.value = true
       
@@ -1018,6 +1099,7 @@ onUnmounted(() => {
         :skill-name="skillUnlockedData.skillName"
         :skill-description="skillUnlockedData.skillDescription"
         :skill-image="skillUnlockedData.skillImage"
+        :show-share-button="skillUnlockedData.showShareButton"
         @continue="onSkillUnlockedContinue"
         @close="onSkillUnlockedClose"
       />

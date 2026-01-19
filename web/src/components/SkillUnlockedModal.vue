@@ -17,10 +17,14 @@ const props = defineProps({
   skillImage: {
     type: String,
     default: ''
+  },
+  showShareButton: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['close', 'continue'])
+const emit = defineEmits(['close', 'continue', 'share'])
 
 function handleClose() {
   emit('close')
@@ -28,6 +32,10 @@ function handleClose() {
 
 function handleContinue() {
   emit('continue')
+}
+
+function handleShare() {
+  emit('share')
 }
 </script>
 
@@ -72,9 +80,17 @@ function handleContinue() {
           </div>
         </div>
         
-        <!-- CTA Button -->
-        <div class="cta-container">
-          <CcButton variant="primary" size="x-large" class="continue-btn" @click="handleContinue">
+        <!-- CTA Buttons -->
+        <div class="cta-container" :class="{ 'two-buttons': showShareButton }">
+          <template v-if="showShareButton">
+            <CcButton variant="primary" size="x-large" class="share-btn" @click="handleShare">
+              Share
+            </CcButton>
+            <CcButton variant="ghost" size="medium" class="continue-btn" @click="handleContinue">
+              Continue
+            </CcButton>
+          </template>
+          <CcButton v-else variant="primary" size="x-large" class="continue-btn" @click="handleContinue">
             Continue
           </CcButton>
         </div>
@@ -225,8 +241,21 @@ function handleContinue() {
   padding-bottom: 12px;
 }
 
+.cta-container.two-buttons {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cta-container.two-buttons .share-btn {
+  width: 100%;
+}
+
 .continue-btn {
   width: 100%;
+}
+
+.cta-container.two-buttons .continue-btn {
+  width: auto;
 }
 
 .home-indicator {
