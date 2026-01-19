@@ -15,11 +15,13 @@ import MoveMarker from './components/MoveMarker.vue'
 import MoveClassificationBadge from './components/MoveClassificationBadge.vue'
 import SkillsBottomSheet from './components/SkillsBottomSheet.vue'
 import SkillEarned from './components/SkillEarned.vue'
+import PrototypeMenu from './components/PrototypeMenu.vue'
 import { parsePGN, calculatePositions, boardToPieces, markBrilliantMoves } from './utils/chess.js'
 
-const showComponents = ref(false)
 const activePly = ref(0)
 const showSkillsSheet = ref(false)
+const showPrototypeMenu = ref(false)
+const selectedPrototype = ref('skill-point-earned')
 
 // Skill earned animation state
 const showMoveList = ref(true)
@@ -562,69 +564,18 @@ onUnmounted(() => {
       </footer>
     </div>
 
-    <!-- Toggle button for components -->
-    <button class="toggle-components" @click="showComponents = !showComponents">
-      {{ showComponents ? '✕' : '☰' }}
+    <!-- Menu button top right -->
+    <button class="menu-button" aria-label="Menu" @click="showPrototypeMenu = true">
+      <CcIcon name="mark-menu" :size="24" />
     </button>
 
-    <section v-if="showComponents" class="components-showcase">
-      <h2>Shared Components</h2>
-
-      <div class="component-card">
-        <h3>EvalBar</h3>
-        <EvalBar :eval-text="'M7'" :black-width="92" :white-width="8" />
-        <EvalBar />
-      </div>
-
-      <div class="component-card">
-        <h3>CoachBubble</h3>
-        <CoachBubble :messages="coachMessages" variant="first" :show-tip="true" />
-        <CoachBubble :messages="[]" variant="secondary" :show-tip="false" />
-      </div>
-
-      <div class="component-card">
-        <h3>Board</h3>
-        <Board :pieces="pieces" :highlights="['e4', 'f6']" :annotations="['skewer']" />
-        <Board :pieces="[]" />
-      </div>
-
-      <div class="component-card">
-        <h3>MoveListBar</h3>
-        <MoveListBar :moves="moveList" :active-ply="0" :show-icons="true" />
-        <MoveListBar />
-      </div>
-
-      <div class="component-card">
-        <h3>ProgressBar</h3>
-        <ProgressBar :value="50" :max="100" label="Skill Progress" :show-explosion="true" />
-        <ProgressBar />
-      </div>
-
-      <div class="component-card">
-        <h3>SkillLeaveBar</h3>
-        <SkillLeaveBar skill-name="Fork" :count="10" />
-        <SkillLeaveBar />
-      </div>
-
-      <div class="component-card">
-        <h3>BottomSheet</h3>
-        <BottomSheet title="Skill Details" content="Your fork skill improved." :overlay-visible="true" />
-        <BottomSheet />
-      </div>
-
-      <div class="component-card">
-        <h3>MoveMarker</h3>
-        <MoveMarker type="skewer" label="Skewer" position="e4" />
-        <MoveMarker type="brilliant" label="Brilliant" position="f6" />
-      </div>
-
-      <div class="component-card">
-        <h3>MoveClassificationBadge</h3>
-        <MoveClassificationBadge type="brilliant" />
-        <MoveClassificationBadge type="blunder" />
-        <MoveClassificationBadge />
-      </div>
-    </section>
+    <!-- Prototype Navigation Menu -->
+    <PrototypeMenu
+      :open="showPrototypeMenu"
+      :selected-example="selectedPrototype"
+      @close="showPrototypeMenu = false"
+      @select="(id) => selectedPrototype = id"
+    />
   </div>
 </template>
 
@@ -649,27 +600,27 @@ onUnmounted(() => {
   gap: 32px;
   padding: 24px;
   font-family: 'Chess Sans', system-ui, -apple-system, sans-serif;
+  position: relative;
 }
 
-.toggle-components {
+.menu-button {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: 4px;
+  right: 4px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
-  color: #fff;
   border: none;
-  padding: 8px;
   border-radius: 8px;
-  font-family: inherit;
-  font-weight: 600;
-  font-size: 20px;
-  font-size: 14px;
   cursor: pointer;
-  z-index: 1000;
-  transition: background 0.2s;
+  color: rgba(255, 255, 255, 0.7);
+  transition: background 0.15s ease;
 }
 
-.toggle-components:hover {
+.menu-button:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
@@ -1053,30 +1004,5 @@ onUnmounted(() => {
   height: 5px;
   background: rgba(255, 255, 255, 0.25);
   border-radius: 100px;
-}
-
-.components-showcase {
-  width: 420px;
-  display: grid;
-  gap: 16px;
-}
-
-.components-showcase h2 {
-  margin: 0;
-  font-size: 20px;
-}
-
-.component-card {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  display: grid;
-  gap: 10px;
-}
-
-.component-card h3 {
-  margin: 0;
-  font-size: 14px;
 }
 </style>
