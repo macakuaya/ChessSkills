@@ -26,12 +26,28 @@ const showMoveList = ref(true)
 const showSkillEarned = ref(false)
 const skillHighlightSquare = ref(null) // Square to highlight on board (e.g., 'd6')
 const showExplosion = ref(false) // Show explosion circle after coin falls
+const rookSacrificeCount = ref(0) // Track rook sacrifice skill count (starts at 0)
+
+// Skill earned data - set at trigger time, not reactive during animation
 const skillEarnedData = ref({
-  skillName: 'Pawns in the Center',
-  current: 1,
+  skillName: 'Rook Sacrifice',
+  current: 0,
   max: 10,
-  icon: 'skill-fork' // Using fork icon temporarily until skewer icon is exported
+  icon: 'white_rook' // White rook icon for rook sacrifice skill
 })
+
+// Skills list for bottom sheet (reactive to earned skills)
+const skillsList = computed(() => [
+  { name: 'Royal Fork', current: 9, max: 10, icon: 'royal-fork' },
+  { name: 'Absolute Pin', current: 5, max: 10, icon: 'absolute-pin' },
+  { name: 'Rook Sacrifice', current: rookSacrificeCount.value, max: 10, icon: 'rook-sacrifice' },
+  { name: 'Skewer', current: 0, max: 10, icon: null },
+  { name: 'Knight Fork', current: 0, max: 10, icon: null },
+  { name: 'Fork', current: 0, max: 10, icon: null },
+  { name: 'Defend Piece', current: 0, max: 10, icon: null },
+  { name: 'Check', current: 0, max: 10, icon: null },
+  { name: 'Capture', current: 0, max: 10, icon: null },
+])
 
 // Game data
 const gameData = ref(null)
@@ -308,21 +324,34 @@ watch(activePly, (newPly, oldPly) => {
     const moveNotation = getMoveAtPly(newPly)
     playMoveSound(moveNotation)
     
-    // Check for skill earned trigger at move 18. Bd6 (ply 35)
-    if (newPly === 35 && !showSkillEarned.value) {
-      triggerSkillEarned()
+    // Check for skill earned trigger at move 18. Bd6 (ply 35) - first rook sacrifice
+    if (newPly === 35 && rookSacrificeCount.value === 0 && !showSkillEarned.value) {
+      triggerSkillEarned('d6')
+    }
+    
+    // Check for skill earned trigger at move 19. e5 (ply 37) - second rook sacrifice
+    if (newPly === 37 && rookSacrificeCount.value === 1 && !showSkillEarned.value) {
+      triggerSkillEarned('e5')
     }
   } else if (newPly > 0) {
     // Moving backward - play a simple move sound for the position we're at
     const moveNotation = getMoveAtPly(newPly)
     playMoveSound(moveNotation)
     
-    // Reset skill earned if going back before the trigger point
+    // Reset skill earned if going back before the trigger points
     if (newPly < 35) {
       showMoveList.value = true
       showSkillEarned.value = false
       skillHighlightSquare.value = null
       showExplosion.value = false
+      rookSacrificeCount.value = 0 // Reset to initial count
+    } else if (newPly < 37 && rookSacrificeCount.value > 1) {
+      // Going back before second sacrifice but after first
+      showMoveList.value = true
+      showSkillEarned.value = false
+      skillHighlightSquare.value = null
+      showExplosion.value = false
+      rookSacrificeCount.value = 1
     }
   } else {
     // Back to starting position - play a simple move sound
@@ -331,13 +360,17 @@ watch(activePly, (newPly, oldPly) => {
     showSkillEarned.value = false
     skillHighlightSquare.value = null
     showExplosion.value = false
+    rookSacrificeCount.value = 0 // Reset to initial count
   }
 })
 
 // Trigger skill earned animation
-function triggerSkillEarned() {
-  // Highlight the skill square on the board (Bd6 = d6)
-  skillHighlightSquare.value = 'd6'
+function triggerSkillEarned(square) {
+  // Capture current count at trigger time (don't change during animation)
+  skillEarnedData.value.current = rookSacrificeCount.value
+  
+  // Highlight the skill square on the board
+  skillHighlightSquare.value = square
   
   // After 200ms delay
   setTimeout(() => {
@@ -354,6 +387,16 @@ function triggerSkillEarned() {
   setTimeout(() => {
     showExplosion.value = true
   }, 1350)
+  
+  // Auto-close after progress bar animation completes + brief pause
+  // Timeline from trigger:
+  // - 300ms: skill earned visible
+  // - 1850ms: progress bar starts (300 + 1550)
+  // - 2350ms: progress bar ends (1850 + 500)
+  // - 2850ms: slide out
+  setTimeout(() => {
+    closeSkillEarned()
+  }, 2850)
 }
 
 // Close skill earned and show move list
@@ -362,9 +405,11 @@ function closeSkillEarned() {
     showSkillEarned.value = false
     skillHighlightSquare.value = null
     showExplosion.value = false
+    // Wait for slide-out to finish (150ms), THEN update count and fade in move list
     setTimeout(() => {
+      rookSacrificeCount.value++ // Increment AFTER slide-out completes
       showMoveList.value = true
-    }, 100)
+    }, 150)
   }
 }
 
@@ -447,7 +492,7 @@ onUnmounted(() => {
       </section>
 
       <section class="content-area">
-        <div class="move-list-wrapper" :class="{ 'fade-out': !showMoveList }">
+        <div class="move-list-wrapper" :class="{ 'visible': showMoveList }">
           <MoveListBar
             :moves="moveList"
             v-model:active-ply="activePly"
@@ -476,6 +521,7 @@ onUnmounted(() => {
       <!-- Skills Bottom Sheet -->
       <SkillsBottomSheet 
         :open="showSkillsSheet" 
+        :skills="skillsList"
         class="skills-sheet"
         @close="showSkillsSheet = false"
       />
@@ -793,13 +839,14 @@ onUnmounted(() => {
 /* Move list fade animation */
 .move-list-wrapper {
   width: 100%;
-  opacity: 1;
-  transition: opacity 100ms cubic-bezier(0, 0, 0.4, 1);
-}
-
-.move-list-wrapper.fade-out {
   opacity: 0;
   pointer-events: none;
+  transition: opacity 150ms cubic-bezier(0, 0, 0.4, 1);
+}
+
+.move-list-wrapper.visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .marker-row {

@@ -44,10 +44,12 @@ watch(() => props.visible, (isVisible) => {
       animatedCounter.value = props.current + 1
     }, 1550)
   } else {
-    // Reset when hidden
-    animatedProgress.value = 0
-    animatedCounter.value = 0
-    isCounterAnimating.value = false
+    // Reset AFTER slide-out completes (150ms) so progress stays during animation
+    setTimeout(() => {
+      animatedProgress.value = getCurrentPercent()
+      animatedCounter.value = props.current
+      isCounterAnimating.value = false
+    }, 150)
   }
 })
 </script>
@@ -56,7 +58,7 @@ watch(() => props.visible, (isVisible) => {
   <div class="skill-earned" :class="{ visible }">
     <!-- Skill Icon -->
     <div class="skill-icon">
-      <img v-if="icon" :src="`${baseUrl}icons/${icon}.svg`" :alt="skillName" />
+      <img v-if="icon" :src="`${baseUrl}icons/${icon}.png`" :alt="skillName" />
       <div v-else class="skill-icon-placeholder">
         <svg viewBox="0 0 40 40" fill="none">
           <rect x="2" y="2" width="36" height="36" rx="2" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-dasharray="4 4" fill="none"/>
@@ -104,14 +106,20 @@ watch(() => props.visible, (isVisible) => {
   opacity: 0;
   transform: translateY(24px);
   pointer-events: none;
-  transition: opacity 100ms cubic-bezier(0, 0, 0.4, 1),
-              transform 100ms cubic-bezier(0, 0, 0.4, 1);
+  visibility: hidden;
+  transition: opacity 150ms cubic-bezier(0, 0, 0.4, 1),
+              transform 150ms cubic-bezier(0, 0, 0.4, 1),
+              visibility 0ms 150ms; /* Hide after fade-out completes */
 }
 
 .skill-earned.visible {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
+  visibility: visible;
+  transition: opacity 150ms cubic-bezier(0, 0, 0.4, 1),
+              transform 150ms cubic-bezier(0, 0, 0.4, 1),
+              visibility 0ms; /* Show immediately */
 }
 
 .skill-icon {
