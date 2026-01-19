@@ -7,6 +7,7 @@ const props = defineProps({
   highlights: { type: Array, default: () => [] },
   lastMove: { type: Object, default: null }, // { from: 'e2', to: 'e4' }
   skillHighlight: { type: String, default: null }, // Square to highlight with skill animation (e.g., 'd6')
+  skillHighlightLabel: { type: String, default: null }, // Label text for skill highlight (e.g., 'Skewer')
 })
 
 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
@@ -75,6 +76,24 @@ const getPieceImage = (piece) => {
           v-if="hasSkillHighlight(square)" 
           class="skill-highlight-overlay"
         ></div>
+        
+        <!-- Skill Star Icon (separate from overlay to avoid opacity inheritance) -->
+        <svg 
+          v-if="hasSkillHighlight(square)" 
+          class="skill-star-icon" 
+          viewBox="0 0 20 20" 
+          fill="none"
+        >
+          <path d="M6.56624 15.6425C6.14456 15.9236 5.64255 15.5622 5.78311 15.0803L6.82729 11.1244L3.6546 8.55415C3.23291 8.21278 3.57427 7.65053 3.9558 7.61037L8.05219 7.38949L9.51805 3.57423C9.59837 3.37342 9.79917 3.23286 10.0201 3.23286C10.2209 3.23286 10.4217 3.35334 10.502 3.57423L11.9678 7.38949L16.0442 7.61037C16.5662 7.63045 16.6867 8.27302 16.3454 8.53407L13.1727 11.1244L14.2168 15.0803C14.3574 15.5823 13.7751 15.8634 13.4337 15.6425L9.99998 13.4337L6.56624 15.6425Z" fill="white"/>
+        </svg>
+        
+        <!-- Skill Label Bubble -->
+        <div 
+          v-if="hasSkillHighlight(square) && skillHighlightLabel" 
+          class="skill-label-bubble"
+        >
+          {{ skillHighlightLabel }}
+        </div>
 
         <!-- Piece -->
         <img 
@@ -187,6 +206,68 @@ const getPieceImage = (piece) => {
   }
   to {
     opacity: 0.8;
+  }
+}
+
+/* Skill Star Icon */
+.skill-star-icon {
+  position: absolute;
+  left: 50%;
+  z-index: 3;
+  pointer-events: none;
+  filter: drop-shadow(0px 1.2px 0px rgba(0, 0, 0, 0.25));
+  /* Animation: scale 20px → 24px, move from center to slightly below center, fade in */
+  animation: skill-star-animate 300ms cubic-bezier(0, 0, 0.4, 1) forwards;
+}
+
+@keyframes skill-star-animate {
+  from {
+    opacity: 0.1;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+  to {
+    opacity: 1;
+    width: 24px;
+    height: 24px;
+    top: 55%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Skill Label Bubble */
+.skill-label-bubble {
+  position: absolute;
+  left: 90%;
+  z-index: 4;
+  pointer-events: none;
+  background: white;
+  padding: 0 6px;
+  border-radius: 10px;
+  box-shadow: 0px 1.1px 0px rgba(0, 0, 0, 0.15);
+  font-family: 'Chess Sans', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 20px;
+  color: #cf8d1b; /* color-gold-400 */
+  white-space: nowrap;
+  /* Center of pill anchored at 90%, grows equally left and right */
+  /* Animation: move from center to top, fade in */
+  animation: skill-label-animate 300ms cubic-bezier(0, 0, 0.4, 1) forwards;
+}
+
+@keyframes skill-label-animate {
+  from {
+    opacity: 0.1;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+  to {
+    opacity: 1;
+    top: -6px;
+    transform: translate(-50%, 0);
   }
 }
 </style>

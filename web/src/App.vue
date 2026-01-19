@@ -26,7 +26,7 @@ const showMoveList = ref(true)
 const showSkillEarned = ref(false)
 const skillHighlightSquare = ref(null) // Square to highlight on board (e.g., 'd6')
 const skillEarnedData = ref({
-  skillName: 'Skewers',
+  skillName: 'Pawns in the Center',
   current: 1,
   max: 10,
   icon: 'skill-fork' // Using fork icon temporarily until skewer icon is exported
@@ -420,7 +420,7 @@ onUnmounted(() => {
       </section>
 
       <section class="board-area">
-        <Board :pieces="pieces" :size="375" :skill-highlight="skillHighlightSquare" />
+        <Board :pieces="pieces" :size="375" :skill-highlight="skillHighlightSquare" :skill-highlight-label="skillEarnedData.skillName" />
       </section>
 
       <section class="content-area">
