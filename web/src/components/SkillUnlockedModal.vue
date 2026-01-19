@@ -32,7 +32,13 @@ function handleContinue() {
 </script>
 
 <template>
-  <Transition name="modal-fade">
+  <!-- Overlay -->
+  <Transition name="overlay">
+    <div v-if="visible" class="modal-overlay"></div>
+  </Transition>
+  
+  <!-- Modal -->
+  <Transition name="modal-slide">
     <div v-if="visible" class="skill-unlocked-modal">
       <!-- Status Bar placeholder -->
       <div class="status-bar-space"></div>
@@ -85,13 +91,18 @@ function handleContinue() {
 <style scoped>
 .skill-unlocked-modal {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: linear-gradient(180deg, #312e2b 0%, #262421 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   z-index: 100;
   overflow: hidden;
+  transform: translateY(0);
+  will-change: transform;
 }
 
 .status-bar-space {
@@ -235,17 +246,33 @@ function handleContinue() {
   border-radius: 100px;
 }
 
-/* Modal transition */
-.modal-fade-enter-active {
-  transition: opacity 300ms ease-out;
+/* Overlay */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
 }
 
-.modal-fade-leave-active {
-  transition: opacity 200ms ease-in;
+/* Overlay transition */
+.overlay-enter-active,
+.overlay-leave-active {
+  transition: opacity 150ms cubic-bezier(0, 0, 0.4, 1);
 }
 
-.modal-fade-enter-from,
-.modal-fade-leave-to {
+.overlay-enter-from,
+.overlay-leave-to {
   opacity: 0;
+}
+
+/* Modal slide transition */
+.modal-slide-enter-active,
+.modal-slide-leave-active {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.modal-slide-enter-from,
+.modal-slide-leave-to {
+  transform: translateY(100%);
 }
 </style>

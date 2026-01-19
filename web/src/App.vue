@@ -754,8 +754,7 @@ function onContinueClick() {
     
     // After 2000ms, show the hero modal
     setTimeout(() => {
-      // Close celebration
-      showBoardCelebration.value = false
+      // Hide buttons but keep board celebration visible during modal slide-in
       showSkillEarned.value = false
       skillHighlightSquare.value = null
       showExplosion.value = false
@@ -779,6 +778,11 @@ function onContinueClick() {
         skillImage: ''
       }
       showSkillUnlockedModal.value = true
+      
+      // Hide board celebration after modal slide-in completes (250ms)
+      setTimeout(() => {
+        showBoardCelebration.value = false
+      }, 250)
     }, 2000)
     
     return
