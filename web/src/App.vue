@@ -339,22 +339,19 @@ watch(activePly, (newPly, oldPly) => {
     const moveNotation = getMoveAtPly(newPly)
     playMoveSound(moveNotation)
     
-    // Reset skill earned if going back before the trigger points
+    // Reset skill animation state if going back before the trigger points
+    // But DON'T reset revealedSkillPlies - once revealed, stays revealed
     if (newPly < 35) {
       showMoveList.value = true
       showSkillEarned.value = false
       skillHighlightSquare.value = null
       showExplosion.value = false
-      rookSacrificeCount.value = 0 // Reset to initial count
-      revealedSkillPlies.value = [] // Reset revealed plies
-    } else if (newPly < 37 && rookSacrificeCount.value > 1) {
-      // Going back before second sacrifice but after first
+    } else if (newPly < 37) {
+      // Going back before second sacrifice - close any active animation
       showMoveList.value = true
       showSkillEarned.value = false
       skillHighlightSquare.value = null
       showExplosion.value = false
-      rookSacrificeCount.value = 1
-      revealedSkillPlies.value = revealedSkillPlies.value.filter(p => p < 37) // Keep only first revealed
     }
   } else {
     // Back to starting position - play a simple move sound
@@ -363,8 +360,7 @@ watch(activePly, (newPly, oldPly) => {
     showSkillEarned.value = false
     skillHighlightSquare.value = null
     showExplosion.value = false
-    rookSacrificeCount.value = 0 // Reset to initial count
-    revealedSkillPlies.value = [] // Reset revealed plies
+    // DON'T reset revealedSkillPlies - once revealed, stays revealed
   }
 })
 
@@ -416,9 +412,9 @@ function closeSkillEarned() {
     // Wait for slide-out to finish (150ms), THEN update count and fade in move list
     setTimeout(() => {
       rookSacrificeCount.value++ // Increment AFTER slide-out completes
-      // Mark this ply as revealed (no more gold star)
+      // Mark this ply as revealed (no more gold star) - use spread to trigger reactivity
       if (currentAnimatingPly.value && !revealedSkillPlies.value.includes(currentAnimatingPly.value)) {
-        revealedSkillPlies.value.push(currentAnimatingPly.value)
+        revealedSkillPlies.value = [...revealedSkillPlies.value, currentAnimatingPly.value]
       }
       currentAnimatingPly.value = null
       showMoveList.value = true
