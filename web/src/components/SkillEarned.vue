@@ -18,6 +18,9 @@ const animatedProgress = ref(0)
 const animatedCounter = ref(0)
 const isCounterAnimating = ref(false)
 
+// Disable transition when snapping to initial state
+const skipTransition = ref(false)
+
 function getCurrentPercent() {
   return Math.round((props.current / props.max) * 100)
 }
@@ -29,10 +32,16 @@ function getNextPercent() {
 // Watch visibility to trigger progress animation
 watch(() => props.visible, (isVisible) => {
   if (isVisible) {
-    // Start at current progress (1/10 = 10%)
+    // Disable transition to snap to starting position
+    skipTransition.value = true
     animatedProgress.value = getCurrentPercent()
     animatedCounter.value = props.current
     isCounterAnimating.value = false
+    
+    // Re-enable transition after a frame
+    requestAnimationFrame(() => {
+      skipTransition.value = false
+    })
     
     // After explosion completes (~1550ms from visibility), grow +1 point
     // Explosion starts at 1350ms from trigger, lasts 500ms
@@ -46,6 +55,7 @@ watch(() => props.visible, (isVisible) => {
   } else {
     // Reset AFTER slide-out completes (150ms) so progress stays during animation
     setTimeout(() => {
+      skipTransition.value = true
       animatedProgress.value = getCurrentPercent()
       animatedCounter.value = props.current
       isCounterAnimating.value = false
@@ -86,6 +96,7 @@ watch(() => props.visible, (isVisible) => {
         <div class="progress-bg"></div>
         <div 
           class="progress-fill" 
+          :class="{ 'skip-transition': skipTransition }"
           :style="{ width: animatedProgress + '%' }"
         ></div>
       </div>
@@ -251,5 +262,9 @@ watch(() => props.visible, (isVisible) => {
   background: #81b64c;
   border-radius: 10px;
   transition: width 500ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.progress-fill.skip-transition {
+  transition: none;
 }
 </style>

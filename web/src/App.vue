@@ -29,6 +29,7 @@ const showSkillEarned = ref(false)
 const skillHighlightSquare = ref(null) // Square to highlight on board (e.g., 'd6')
 const showExplosion = ref(false) // Show explosion circle after coin falls
 const rookSacrificeCount = ref(0) // Track rook sacrifice skill count (starts at 0)
+const queenSacrificeCount = ref(0) // Track queen sacrifice skill count (starts at 0)
 const revealedSkillPlies = ref([]) // Track which skill plies have been revealed
 
 // Skill earned data - set at trigger time, not reactive during animation
@@ -42,7 +43,7 @@ const skillEarnedData = ref({
 // Skills list for bottom sheet (reactive to earned skills)
 const skillsList = computed(() => [
   { name: 'Royal Fork', current: 9, max: 10, icon: 'royal-fork' },
-  { name: 'Absolute Pin', current: 5, max: 10, icon: 'absolute-pin' },
+  { name: 'Queen Sacrifice', current: queenSacrificeCount.value, max: 10, icon: 'queen-sacrifice' },
   { name: 'Rook Sacrifice', current: rookSacrificeCount.value, max: 10, icon: 'rook-sacrifice' },
   { name: 'Skewer', current: 0, max: 10, icon: null },
   { name: 'Knight Fork', current: 0, max: 10, icon: null },
@@ -163,8 +164,8 @@ async function loadGame(pgnPath) {
     gameData.value = parsePGN(pgnText)
     
     // Mark brilliant moves (for The Immortal Game)
-    // 18. Bd6 (rook sac #1), 19. e5 (rook sac #2), 22. Qf6+ (queen sac), 23. Be7# (checkmate)
-    const brilliantMoves = [18, 19, 22, 23]
+    // 18. Bd6 (rook sac #1), 19. e5 (rook sac #2), 22. Qf6+ (queen sac)
+    const brilliantMoves = [18, 19, 22]
     moveList.value = markBrilliantMoves(gameData.value.moves, brilliantMoves)
     
     // Calculate all positions
@@ -329,12 +330,17 @@ watch(activePly, (newPly, oldPly) => {
     
     // Check for skill earned trigger at move 18. Bd6 (ply 35) - first rook sacrifice
     if (newPly === 35 && rookSacrificeCount.value === 0 && !showSkillEarned.value) {
-      triggerSkillEarned('d6', 35)
+      triggerSkillEarned('d6', 35, 'rook')
     }
     
     // Check for skill earned trigger at move 19. e5 (ply 37) - second rook sacrifice
     if (newPly === 37 && rookSacrificeCount.value === 1 && !showSkillEarned.value) {
-      triggerSkillEarned('e5', 37)
+      triggerSkillEarned('e5', 37, 'rook')
+    }
+    
+    // Check for skill earned trigger at move 22. Qf6+ (ply 43) - queen sacrifice
+    if (newPly === 43 && queenSacrificeCount.value === 0 && !showSkillEarned.value) {
+      triggerSkillEarned('f6', 43, 'queen')
     }
   } else if (newPly > 0) {
     // Moving backward - play a simple move sound for the position we're at
@@ -349,7 +355,13 @@ watch(activePly, (newPly, oldPly) => {
       skillHighlightSquare.value = null
       showExplosion.value = false
     } else if (newPly < 37) {
-      // Going back before second sacrifice - close any active animation
+      // Going back before second rook sacrifice - close any active animation
+      showMoveList.value = true
+      showSkillEarned.value = false
+      skillHighlightSquare.value = null
+      showExplosion.value = false
+    } else if (newPly < 43) {
+      // Going back before queen sacrifice - close any active animation
       showMoveList.value = true
       showSkillEarned.value = false
       skillHighlightSquare.value = null
@@ -368,12 +380,29 @@ watch(activePly, (newPly, oldPly) => {
 
 // Track which ply triggered the current animation
 const currentAnimatingPly = ref(null)
+const currentSkillType = ref(null) // Track which skill type is animating
 
 // Trigger skill earned animation
-function triggerSkillEarned(square, ply) {
-  // Capture current count at trigger time (don't change during animation)
-  skillEarnedData.value.current = rookSacrificeCount.value
+function triggerSkillEarned(square, ply, skillType = 'rook') {
+  // Set skill data based on type
+  if (skillType === 'queen') {
+    skillEarnedData.value = {
+      skillName: 'Queen Sacrifice',
+      current: queenSacrificeCount.value,
+      max: 10,
+      icon: 'white_queen'
+    }
+  } else {
+    skillEarnedData.value = {
+      skillName: 'Rook Sacrifice',
+      current: rookSacrificeCount.value,
+      max: 10,
+      icon: 'white_rook'
+    }
+  }
+  
   currentAnimatingPly.value = ply
+  currentSkillType.value = skillType
   
   // Highlight the skill square on the board
   skillHighlightSquare.value = square
@@ -413,12 +442,18 @@ function closeSkillEarned() {
     showExplosion.value = false
     // Wait for slide-out to finish (150ms), THEN update count and fade in move list
     setTimeout(() => {
-      rookSacrificeCount.value++ // Increment AFTER slide-out completes
+      // Increment the correct counter based on skill type
+      if (currentSkillType.value === 'queen') {
+        queenSacrificeCount.value++
+      } else {
+        rookSacrificeCount.value++
+      }
       // Mark this ply as revealed (no more gold star) - use spread to trigger reactivity
       if (currentAnimatingPly.value && !revealedSkillPlies.value.includes(currentAnimatingPly.value)) {
         revealedSkillPlies.value = [...revealedSkillPlies.value, currentAnimatingPly.value]
       }
       currentAnimatingPly.value = null
+      currentSkillType.value = null
       showMoveList.value = true
     }, 150)
   }

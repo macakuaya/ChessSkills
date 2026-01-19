@@ -7,8 +7,8 @@ const props = defineProps({
     type: Array, 
     default: () => [
       { name: 'Royal Fork', current: 9, max: 10, icon: 'royal-fork' },
-      { name: 'Absolute Pin', current: 5, max: 10, icon: 'absolute-pin' },
-      { name: 'Rook Sacrifice', current: 1, max: 10, icon: 'rook-sacrifice' },
+      { name: 'Queen Sacrifice', current: 0, max: 10, icon: 'queen-sacrifice' },
+      { name: 'Rook Sacrifice', current: 0, max: 10, icon: 'rook-sacrifice' },
       { name: 'Skewer', current: 0, max: 10, icon: null },
       { name: 'Knight Fork', current: 0, max: 10, icon: null },
       { name: 'Fork', current: 0, max: 10, icon: null },
@@ -40,7 +40,7 @@ const tabs = [
 const baseUrl = import.meta.env.BASE_URL
 const skillIcons = {
   'royal-fork': `${baseUrl}icons/skill-fork.svg`,
-  'absolute-pin': `${baseUrl}icons/skill-pin.svg`,
+  'queen-sacrifice': `${baseUrl}icons/white_queen.png`,
   'rook-sacrifice': `${baseUrl}icons/white_rook.png`,
 }
 
