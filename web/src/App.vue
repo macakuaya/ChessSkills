@@ -27,6 +27,7 @@ const showSkillEarned = ref(false)
 const skillHighlightSquare = ref(null) // Square to highlight on board (e.g., 'd6')
 const showExplosion = ref(false) // Show explosion circle after coin falls
 const rookSacrificeCount = ref(0) // Track rook sacrifice skill count (starts at 0)
+const revealedSkillPlies = ref([]) // Track which skill plies have been revealed
 
 // Skill earned data - set at trigger time, not reactive during animation
 const skillEarnedData = ref({
@@ -326,12 +327,12 @@ watch(activePly, (newPly, oldPly) => {
     
     // Check for skill earned trigger at move 18. Bd6 (ply 35) - first rook sacrifice
     if (newPly === 35 && rookSacrificeCount.value === 0 && !showSkillEarned.value) {
-      triggerSkillEarned('d6')
+      triggerSkillEarned('d6', 35)
     }
     
     // Check for skill earned trigger at move 19. e5 (ply 37) - second rook sacrifice
     if (newPly === 37 && rookSacrificeCount.value === 1 && !showSkillEarned.value) {
-      triggerSkillEarned('e5')
+      triggerSkillEarned('e5', 37)
     }
   } else if (newPly > 0) {
     // Moving backward - play a simple move sound for the position we're at
@@ -345,6 +346,7 @@ watch(activePly, (newPly, oldPly) => {
       skillHighlightSquare.value = null
       showExplosion.value = false
       rookSacrificeCount.value = 0 // Reset to initial count
+      revealedSkillPlies.value = [] // Reset revealed plies
     } else if (newPly < 37 && rookSacrificeCount.value > 1) {
       // Going back before second sacrifice but after first
       showMoveList.value = true
@@ -352,6 +354,7 @@ watch(activePly, (newPly, oldPly) => {
       skillHighlightSquare.value = null
       showExplosion.value = false
       rookSacrificeCount.value = 1
+      revealedSkillPlies.value = revealedSkillPlies.value.filter(p => p < 37) // Keep only first revealed
     }
   } else {
     // Back to starting position - play a simple move sound
@@ -361,13 +364,18 @@ watch(activePly, (newPly, oldPly) => {
     skillHighlightSquare.value = null
     showExplosion.value = false
     rookSacrificeCount.value = 0 // Reset to initial count
+    revealedSkillPlies.value = [] // Reset revealed plies
   }
 })
 
+// Track which ply triggered the current animation
+const currentAnimatingPly = ref(null)
+
 // Trigger skill earned animation
-function triggerSkillEarned(square) {
+function triggerSkillEarned(square, ply) {
   // Capture current count at trigger time (don't change during animation)
   skillEarnedData.value.current = rookSacrificeCount.value
+  currentAnimatingPly.value = ply
   
   // Highlight the skill square on the board
   skillHighlightSquare.value = square
@@ -408,6 +416,11 @@ function closeSkillEarned() {
     // Wait for slide-out to finish (150ms), THEN update count and fade in move list
     setTimeout(() => {
       rookSacrificeCount.value++ // Increment AFTER slide-out completes
+      // Mark this ply as revealed (no more gold star)
+      if (currentAnimatingPly.value && !revealedSkillPlies.value.includes(currentAnimatingPly.value)) {
+        revealedSkillPlies.value.push(currentAnimatingPly.value)
+      }
+      currentAnimatingPly.value = null
       showMoveList.value = true
     }, 150)
   }
@@ -497,6 +510,7 @@ onUnmounted(() => {
             :moves="moveList"
             v-model:active-ply="activePly"
             :show-icons="true"
+            :revealed-plies="revealedSkillPlies"
           />
         </div>
         <SkillEarned
