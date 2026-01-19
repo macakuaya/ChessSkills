@@ -3,6 +3,7 @@ import { ref } from 'vue'
 
 const props = defineProps({
   open: { type: Boolean, default: true },
+  showTabs: { type: Boolean, default: true }, // Hide tabs for FTUE
   skills: { 
     type: Array, 
     default: () => [
@@ -42,6 +43,11 @@ const skillIcons = {
   'royal-fork': `${baseUrl}icons/skill-fork.svg`,
   'queen-sacrifice': `${baseUrl}icons/white_queen.png`,
   'rook-sacrifice': `${baseUrl}icons/white_rook.png`,
+  'capture': `${baseUrl}icons/capture.png`,
+  'check': `${baseUrl}icons/check.png`,
+  'checkmate': `${baseUrl}icons/checkmate-dark.png`,
+  'checkmate-dark': `${baseUrl}icons/checkmate-dark.png`,
+  'castle': `${baseUrl}icons/castle.png`,
 }
 
 function getProgressPercent(current, max) {
@@ -100,6 +106,7 @@ function onTapToggle() {
     <!-- Top Container: Handle + Title + Tabs -->
     <div 
       class="sheet-top"
+      :class="{ 'no-tabs': !showTabs }"
       @mousedown.prevent="onDragStart"
       @mousemove="onDragMove"
       @touchstart.passive="onDragStart"
@@ -115,8 +122,8 @@ function onTapToggle() {
         <h2 class="title">Skills</h2>
       </div>
       
-      <!-- Tabs -->
-      <div class="tabs-container">
+      <!-- Tabs (hidden for FTUE) -->
+      <div v-if="showTabs" class="tabs-container">
         <button
           v-for="tab in tabs"
           :key="tab.id"
@@ -209,6 +216,10 @@ function onTapToggle() {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   cursor: grab;
   user-select: none;
+}
+
+.sheet-top.no-tabs {
+  border-bottom: none;
 }
 
 .sheet-top:active {

@@ -17,6 +17,49 @@ const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 const ranks = [8, 7, 6, 5, 4, 3, 2, 1]
 const squareSize = computed(() => props.size / 8)
 
+// Target position for coin fall (aligned with progress bar start)
+const TARGET_X = 60 // px from left edge of board
+const TARGET_Y_OFFSET = 10 // px below board bottom
+
+// Calculate coin fall position for a given square (as CSS values)
+// The CSS left/top in keyframes are relative to the square element
+const getCoinFallPosition = (square) => {
+  if (!square) return { x: '-170%', y: '600%' }
+  
+  const fileIndex = files.indexOf(square[0])
+  const rankIndex = 8 - parseInt(square[1], 10) // 0 = top row (rank 8)
+  
+  const sqSize = squareSize.value
+  
+  // Target absolute position on the board
+  const targetX = TARGET_X
+  const targetY = props.size + TARGET_Y_OFFSET
+  
+  // Square's position on the board
+  const squareLeft = fileIndex * sqSize
+  const squareTop = rankIndex * sqSize
+  
+  // Final position relative to square (for CSS left/top)
+  const finalLeft = targetX - squareLeft
+  const finalTop = targetY - squareTop
+  
+  // Convert to percentage of square size
+  return {
+    x: (finalLeft / sqSize) * 100,
+    y: (finalTop / sqSize) * 100
+  }
+}
+
+// Get CSS custom properties for the skill highlight square
+const getSkillHighlightStyle = computed(() => {
+  if (!props.skillHighlight) return {}
+  const pos = getCoinFallPosition(props.skillHighlight)
+  return {
+    '--coin-fall-x': `${pos.x}%`,
+    '--coin-fall-y': `${pos.y}%`
+  }
+})
+
 const squares = computed(() => {
   const result = []
   for (let rank of ranks) {
@@ -88,6 +131,7 @@ const getPieceImage = (piece) => {
         <svg 
           v-if="hasSkillHighlight(square)" 
           class="skill-star-icon" 
+          :style="getSkillHighlightStyle"
           viewBox="0 0 20 20" 
           fill="none"
         >
@@ -98,6 +142,7 @@ const getPieceImage = (piece) => {
         <div 
           v-if="hasSkillHighlight(square) && skillHighlightLabel" 
           class="skill-label-bubble"
+          :style="getSkillHighlightStyle"
         >
           <span class="skill-label-text">{{ skillHighlightLabel }}</span>
         </div>
@@ -341,13 +386,13 @@ const getPieceImage = (piece) => {
     left: 90%;
     transform: translate(-50%, -50%) rotate(0deg);
   }
-  /* State 4: fall diagonally, rotate -90° (1350ms = 100%) */
+  /* State 4: fall to target position, rotate -90° (1350ms = 100%) */
   100% {
     opacity: 1;
     width: 16px;
     height: 16px;
-    top: calc(600% + 10px);
-    left: -170%;
+    top: var(--coin-fall-y, 600%);
+    left: var(--coin-fall-x, -170%);
     transform: translate(-50%, -50%) rotate(-90deg);
   }
 }
@@ -422,11 +467,11 @@ const getPieceImage = (piece) => {
     padding: 0;
     background: #E3AA24;
   }
-  /* State 4: fall diagonally to align with progress bar start (1350ms = 100%) */
+  /* State 4: fall to target position (1350ms = 100%) */
   100% {
     opacity: 1;
-    top: 600%;
-    left: -170%;
+    top: var(--coin-fall-y, 600%);
+    left: var(--coin-fall-x, -170%);
     transform: translate(-50%, 0);
     max-width: 20px;
     padding: 0;

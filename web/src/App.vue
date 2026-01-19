@@ -32,6 +32,11 @@ const rookSacrificeCount = ref(0) // Track rook sacrifice skill count (starts at
 const queenSacrificeCount = ref(0) // Track queen sacrifice skill count (starts at 0)
 const revealedSkillPlies = ref([]) // Track which skill plies have been revealed
 
+// FTUE skill counters
+const captureCount = ref(0)
+const checkCount = ref(0)
+const checkmateCount = ref(0)
+
 // Brilliant animation state (triggers after skill animation)
 const brilliantHighlightSquare = ref(null) // Square to highlight with brilliant animation
 const brilliantRevealedPlies = ref([]) // Track which plies have been brilliant-revealed
@@ -55,6 +60,13 @@ const skillsList = computed(() => [
   { name: 'Defend Piece', current: 0, max: 10, icon: null },
   { name: 'Check', current: 0, max: 10, icon: null },
   { name: 'Capture', current: 0, max: 10, icon: null },
+])
+
+// FTUE skills list - basic skills for first time user (only first 3 visible)
+const ftueSkillsList = computed(() => [
+  { name: 'Capture', current: captureCount.value, max: 10, icon: 'capture' },
+  { name: 'Check', current: checkCount.value, max: 10, icon: 'check' },
+  { name: 'Checkmate', current: checkmateCount.value, max: 10, icon: 'checkmate-dark' },
 ])
 
 // Game data
@@ -158,6 +170,15 @@ const evalBarWidths = computed(() => {
   return { blackWidth, whiteWidth }
 })
 
+// Skill moves for different prototypes
+const skillPointEarnedMoves = [18, 19, 22] // Rook sac #1, Rook sac #2, Queen sac
+const ftueMoves = [5, 21, 23] // First capture (Bxb5), First check (Nxg7+), Checkmate (Be7#)
+
+// Get skill moves based on prototype
+function getSkillMoves() {
+  return selectedPrototype.value === 'ftue' ? ftueMoves : skillPointEarnedMoves
+}
+
 // Load PGN file
 async function loadGame(pgnPath) {
   try {
@@ -167,10 +188,8 @@ async function loadGame(pgnPath) {
     // Parse PGN
     gameData.value = parsePGN(pgnText)
     
-    // Mark brilliant moves (for The Immortal Game)
-    // 18. Bd6 (rook sac #1), 19. e5 (rook sac #2), 22. Qf6+ (queen sac)
-    const brilliantMoves = [18, 19, 22]
-    moveList.value = markBrilliantMoves(gameData.value.moves, brilliantMoves)
+    // Mark skill moves based on selected prototype
+    moveList.value = markBrilliantMoves(gameData.value.moves, getSkillMoves())
     
     // Calculate all positions
     positions.value = calculatePositions(gameData.value.moves)
@@ -320,6 +339,22 @@ function getMoveAtPly(ply) {
   return isBlackMove ? move.black : move.white
 }
 
+// Watch for prototype changes to update skill moves
+watch(selectedPrototype, () => {
+  if (gameData.value) {
+    moveList.value = markBrilliantMoves(gameData.value.moves, getSkillMoves())
+    // Reset animation states
+    revealedSkillPlies.value = []
+    brilliantRevealedPlies.value = []
+    rookSacrificeCount.value = 0
+    queenSacrificeCount.value = 0
+    captureCount.value = 0
+    checkCount.value = 0
+    checkmateCount.value = 0
+    activePly.value = 0
+  }
+})
+
 // Watch for ply changes to play sounds
 watch(activePly, (newPly, oldPly) => {
   if (newPly === oldPly) return
@@ -332,23 +367,40 @@ watch(activePly, (newPly, oldPly) => {
     const moveNotation = getMoveAtPly(newPly)
     playMoveSound(moveNotation)
     
-    // Check for skill earned trigger at move 18. Bd6 (ply 35) - first rook sacrifice
-    if (newPly === 35 && rookSacrificeCount.value === 0 && !showSkillEarned.value) {
-      triggerSkillEarned('d6', 35, 'rook')
-    }
-    
-    // Check for skill earned trigger at move 19. e5 (ply 37) - second rook sacrifice
-    if (newPly === 37 && rookSacrificeCount.value === 1 && !showSkillEarned.value) {
-      triggerSkillEarned('e5', 37, 'rook')
-    }
-    
-    // Check for skill earned trigger at move 22. Qf6+ (ply 43) - queen sacrifice
-    if (newPly === 43 && queenSacrificeCount.value === 0 && !showSkillEarned.value) {
-      triggerSkillEarned('f6', 43, 'queen')
-    }
-    // If already brilliant-revealed, replay the brilliant animation
-    else if (newPly === 43 && brilliantRevealedPlies.value.includes(43)) {
-      brilliantHighlightSquare.value = 'f6'
+    if (selectedPrototype.value === 'ftue') {
+      // FTUE triggers
+      // 5. Bxb5 (ply 9) - Capture
+      if (newPly === 9 && captureCount.value === 0 && !showSkillEarned.value) {
+        triggerSkillEarned('b5', 9, 'capture')
+      }
+      // 21. Nxg7+ (ply 41) - Check
+      if (newPly === 41 && checkCount.value === 0 && !showSkillEarned.value) {
+        triggerSkillEarned('g7', 41, 'check')
+      }
+      // 23. Be7# (ply 45) - Checkmate
+      if (newPly === 45 && checkmateCount.value === 0 && !showSkillEarned.value) {
+        triggerSkillEarned('e7', 45, 'checkmate')
+      }
+    } else {
+      // Skill Point Earned triggers
+      // Check for skill earned trigger at move 18. Bd6 (ply 35) - first rook sacrifice
+      if (newPly === 35 && rookSacrificeCount.value === 0 && !showSkillEarned.value) {
+        triggerSkillEarned('d6', 35, 'rook')
+      }
+      
+      // Check for skill earned trigger at move 19. e5 (ply 37) - second rook sacrifice
+      if (newPly === 37 && rookSacrificeCount.value === 1 && !showSkillEarned.value) {
+        triggerSkillEarned('e5', 37, 'rook')
+      }
+      
+      // Check for skill earned trigger at move 22. Qf6+ (ply 43) - queen sacrifice
+      if (newPly === 43 && queenSacrificeCount.value === 0 && !showSkillEarned.value) {
+        triggerSkillEarned('f6', 43, 'queen')
+      }
+      // If already brilliant-revealed, replay the brilliant animation
+      else if (newPly === 43 && brilliantRevealedPlies.value.includes(43)) {
+        brilliantHighlightSquare.value = 'f6'
+      }
     }
   } else if (newPly > 0) {
     // Moving backward - play a simple move sound for the position we're at
@@ -357,29 +409,37 @@ watch(activePly, (newPly, oldPly) => {
     
     // Reset skill animation state if going back before the trigger points
     // But DON'T reset revealedSkillPlies/brilliantRevealedPlies - once revealed, stays revealed
-    if (newPly < 35) {
+    
+    // Helper to reset animation state
+    const resetAnimationState = () => {
       showMoveList.value = true
       showSkillEarned.value = false
       skillHighlightSquare.value = null
       showExplosion.value = false
       brilliantHighlightSquare.value = null
-    } else if (newPly < 37) {
-      // Going back before second rook sacrifice - close any active animation
-      showMoveList.value = true
-      showSkillEarned.value = false
-      skillHighlightSquare.value = null
-      showExplosion.value = false
-      brilliantHighlightSquare.value = null
-    } else if (newPly < 43) {
-      // Going back before queen sacrifice - close any active animation
-      showMoveList.value = true
-      showSkillEarned.value = false
-      skillHighlightSquare.value = null
-      showExplosion.value = false
-      brilliantHighlightSquare.value = null
-    } else if (newPly === 43 && brilliantRevealedPlies.value.includes(43)) {
-      // Landing on brilliant move (going backward) - replay brilliant animation
-      brilliantHighlightSquare.value = 'f6'
+    }
+    
+    if (selectedPrototype.value === 'ftue') {
+      // FTUE skill plies: 9 (capture), 41 (check), 45 (checkmate)
+      if (newPly < 9) {
+        resetAnimationState()
+      } else if (newPly < 41) {
+        resetAnimationState()
+      } else if (newPly < 45) {
+        resetAnimationState()
+      }
+    } else {
+      // Skill Point Earned plies: 35, 37, 43
+      if (newPly < 35) {
+        resetAnimationState()
+      } else if (newPly < 37) {
+        resetAnimationState()
+      } else if (newPly < 43) {
+        resetAnimationState()
+      } else if (newPly === 43 && brilliantRevealedPlies.value.includes(43)) {
+        // Landing on brilliant move (going backward) - replay brilliant animation
+        brilliantHighlightSquare.value = 'f6'
+      }
     }
   } else {
     // Back to starting position - play a simple move sound
@@ -407,12 +467,33 @@ function triggerSkillEarned(square, ply, skillType = 'rook') {
       max: 10,
       icon: 'white_queen'
     }
-  } else {
+  } else if (skillType === 'rook') {
     skillEarnedData.value = {
       skillName: 'Rook Sacrifice',
       current: rookSacrificeCount.value,
       max: 10,
       icon: 'white_rook'
+    }
+  } else if (skillType === 'capture') {
+    skillEarnedData.value = {
+      skillName: 'Capture',
+      current: captureCount.value,
+      max: 10,
+      icon: 'capture'
+    }
+  } else if (skillType === 'check') {
+    skillEarnedData.value = {
+      skillName: 'Check',
+      current: checkCount.value,
+      max: 10,
+      icon: 'check'
+    }
+  } else if (skillType === 'checkmate') {
+    skillEarnedData.value = {
+      skillName: 'Checkmate',
+      current: checkmateCount.value,
+      max: 10,
+      icon: 'checkmate-dark'
     }
   }
   
@@ -465,8 +546,14 @@ function closeSkillEarned() {
       // Increment the correct counter based on skill type
       if (savedSkillType === 'queen') {
         queenSacrificeCount.value++
-      } else {
+      } else if (savedSkillType === 'rook') {
         rookSacrificeCount.value++
+      } else if (savedSkillType === 'capture') {
+        captureCount.value++
+      } else if (savedSkillType === 'check') {
+        checkCount.value++
+      } else if (savedSkillType === 'checkmate') {
+        checkmateCount.value++
       }
       // Mark this ply as revealed (no more gold star) - use spread to trigger reactivity
       if (savedPly && !revealedSkillPlies.value.includes(savedPly)) {
@@ -477,8 +564,8 @@ function closeSkillEarned() {
       currentSkillType.value = null
       showMoveList.value = true
       
-      // Only trigger brilliant animation for Queen Sacrifice (Qf6+)
-      if (savedSkillType === 'queen') {
+      // Only trigger brilliant animation for Queen Sacrifice (Qf6+) - NOT for FTUE
+      if (savedSkillType === 'queen' && selectedPrototype.value !== 'ftue') {
         // Mark as brilliant revealed (so move list shows teal glyph)
         if (savedPly && !brilliantRevealedPlies.value.includes(savedPly)) {
           brilliantRevealedPlies.value = [...brilliantRevealedPlies.value, savedPly]
@@ -611,7 +698,8 @@ onUnmounted(() => {
       <!-- Skills Bottom Sheet -->
       <SkillsBottomSheet 
         :open="showSkillsSheet" 
-        :skills="skillsList"
+        :skills="selectedPrototype === 'ftue' ? ftueSkillsList : skillsList"
+        :show-tabs="selectedPrototype !== 'ftue'"
         class="skills-sheet"
         @close="showSkillsSheet = false"
       />
