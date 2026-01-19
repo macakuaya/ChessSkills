@@ -796,10 +796,12 @@ onUnmounted(() => {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0) 100%),
     #312e2b;
   border-radius: 40px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  /* Use inset box-shadow for border effect (doesn't affect layout) */
+  box-shadow: 
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 12px 30px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(255, 255, 255, 0.06);
   color: #ffffff;
   position: relative;
   overflow: hidden;
