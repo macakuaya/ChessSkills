@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { CcIcon } from '@chesscom/design-system'
 
 const props = defineProps({
   size: { type: Number, default: 375 },
@@ -9,6 +10,7 @@ const props = defineProps({
   skillHighlight: { type: String, default: null }, // Square to highlight with skill animation (e.g., 'd6')
   skillHighlightLabel: { type: String, default: null }, // Label text for skill highlight (e.g., 'Skewer')
   showExplosion: { type: Boolean, default: false }, // Show the explosion circle
+  brilliantHighlight: { type: String, default: null }, // Square to highlight with brilliant animation (e.g., 'f6')
 })
 
 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
@@ -42,6 +44,10 @@ const isLastMoveSquare = (square) => {
 
 const hasSkillHighlight = (square) => {
   return props.skillHighlight === square
+}
+
+const hasBrilliantHighlight = (square) => {
+  return props.brilliantHighlight === square
 }
 
 const getPieceOnSquare = (square) => {
@@ -94,6 +100,28 @@ const getPieceImage = (piece) => {
           class="skill-label-bubble"
         >
           <span class="skill-label-text">{{ skillHighlightLabel }}</span>
+        </div>
+
+        <!-- Brilliant Highlight Overlay (teal color) -->
+        <div 
+          v-if="hasBrilliantHighlight(square)" 
+          class="brilliant-highlight-overlay"
+        ></div>
+        
+        <!-- Brilliant Icon (exclamation double) -->
+        <div 
+          v-if="hasBrilliantHighlight(square)" 
+          class="brilliant-icon-wrapper"
+        >
+          <CcIcon name="move-exclamation-double" :size="16" color="white" />
+        </div>
+        
+        <!-- Brilliant Label Bubble (teal, stays on board) -->
+        <div 
+          v-if="hasBrilliantHighlight(square)" 
+          class="brilliant-label-bubble"
+        >
+          <span class="brilliant-label-text">Brilliant!</span>
         </div>
 
         <!-- Piece -->
@@ -418,6 +446,159 @@ const getPieceImage = (piece) => {
 }
 
 @keyframes skill-text-fade {
+  0% { opacity: 0; }
+  37.5% { opacity: 1; }
+  62.5% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ========== BRILLIANT HIGHLIGHT ANIMATIONS ========== */
+/* Same as skill animation but with teal color (#26C2A3) and no falling */
+
+/* Brilliant Highlight Overlay (teal color) */
+.brilliant-highlight-overlay {
+  position: absolute;
+  inset: 0;
+  background: #26C2A3; /* Brilliant teal */
+  opacity: 0;
+  z-index: 2;
+  pointer-events: none;
+  animation: brilliant-overlay-animate 800ms cubic-bezier(0, 0, 0.4, 1) forwards;
+}
+
+@keyframes brilliant-overlay-animate {
+  0% { opacity: 0; }
+  37.5% { opacity: 0.8; }
+  62.5% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+/* Brilliant Icon Wrapper - contains the CcIcon */
+.brilliant-icon-wrapper {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0px 1.2px 0px rgba(0, 0, 0, 0.25));
+  /* 800ms animation - no falling, stays at final position */
+  animation: brilliant-icon-animate 800ms cubic-bezier(0, 0, 0.4, 1) forwards;
+}
+
+@keyframes brilliant-icon-animate {
+  /* State 1 (0ms) - centered, faded */
+  0% {
+    opacity: 0.1;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  /* State 2 (300ms = 37.5%) - centered, visible, larger */
+  37.5% {
+    opacity: 1;
+    width: 24px;
+    height: 24px;
+    top: 55%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  /* Hold State 2 (500ms = 62.5%) */
+  62.5% {
+    opacity: 1;
+    width: 24px;
+    height: 24px;
+    top: 55%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  /* State 3: in teal coin at top right (800ms = 100%) - STAYS HERE */
+  100% {
+    opacity: 1;
+    width: 16px;
+    height: 16px;
+    top: 4px;
+    left: 90%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Brilliant Label Bubble (white pill → teal circle, stays on board) */
+.brilliant-label-bubble {
+  position: absolute;
+  left: 90%;
+  top: -6px;
+  height: 20px;
+  z-index: 4;
+  pointer-events: none;
+  box-shadow: 0px 1.1px 0px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  /* 800ms animation - no falling, stays at final position */
+  animation: brilliant-pill-animate 800ms cubic-bezier(0, 0, 0.4, 1) forwards;
+}
+
+@keyframes brilliant-pill-animate {
+  /* State 1: centered, faded (0ms) */
+  0% {
+    opacity: 0;
+    top: 50%;
+    left: 90%;
+    transform: translate(-50%, -50%);
+    max-width: 200px;
+    padding: 0 6px;
+    background: white;
+  }
+  /* State 2: at top, visible, white pill (300ms = 37.5%) */
+  37.5% {
+    opacity: 1;
+    top: -6px;
+    left: 90%;
+    transform: translate(-50%, 0);
+    max-width: 200px;
+    padding: 0 6px;
+    background: white;
+  }
+  /* Hold State 2 (500ms = 62.5%) */
+  62.5% {
+    opacity: 1;
+    top: -6px;
+    left: 90%;
+    transform: translate(-50%, 0);
+    max-width: 200px;
+    padding: 0 6px;
+    background: white;
+  }
+  /* State 3: teal circle (800ms = 100%) - STAYS HERE */
+  100% {
+    opacity: 1;
+    top: -6px;
+    left: 90%;
+    transform: translate(-50%, 0);
+    max-width: 20px;
+    padding: 0;
+    background: #26C2A3;
+  }
+}
+
+/* Text inside the brilliant pill - fades out */
+.brilliant-label-text {
+  font-family: 'Chess Sans', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 20px;
+  color: #1a9a82; /* Darker teal for text */
+  white-space: nowrap;
+  animation: brilliant-text-fade 800ms cubic-bezier(0, 0, 0.4, 1) forwards;
+}
+
+@keyframes brilliant-text-fade {
   0% { opacity: 0; }
   37.5% { opacity: 1; }
   62.5% { opacity: 1; }

@@ -1,11 +1,13 @@
 <script setup>
 import { ref, watch, nextTick } from 'vue'
+import { CcIcon } from '@chesscom/design-system'
 
 const props = defineProps({
   moves: { type: Array, default: () => [] },
   activePly: { type: Number, default: -1 },
   showIcons: { type: Boolean, default: true },
   revealedPlies: { type: Array, default: () => [] }, // Plies where skill has been revealed
+  brilliantRevealedPlies: { type: Array, default: () => [] }, // Plies where brilliant has been revealed (after skill)
 })
 
 const emit = defineEmits(['update:activePly'])
@@ -20,6 +22,9 @@ const isBlackSelected = (moveIndex) => props.activePly === moveIndex * 2 + 2
 
 // Helper to check if a ply's skill has been revealed
 const isWhitePlyRevealed = (moveIndex) => props.revealedPlies.includes(moveIndex * 2 + 1)
+
+// Helper to check if a ply's brilliant status has been revealed (after skill)
+const isWhiteBrilliantRevealed = (moveIndex) => props.brilliantRevealedPlies.includes(moveIndex * 2 + 1)
 
 // Calculate total plies (each move has white + optionally black)
 const getTotalPlies = () => {
@@ -110,12 +115,22 @@ watch(() => props.activePly, () => {
               <rect width="20" height="20" rx="10" fill="#E3AA24"/>
               <path d="M6.56624 15.6425C6.14456 15.9236 5.64255 15.5622 5.78311 15.0803L6.82729 11.1244L3.6546 8.55415C3.23291 8.21278 3.57427 7.65053 3.9558 7.61037L8.05219 7.38949L9.51805 3.57423C9.59837 3.37342 9.79917 3.23286 10.0201 3.23286C10.2209 3.23286 10.4217 3.35334 10.502 3.57423L11.9678 7.38949L16.0442 7.61037C16.5662 7.63045 16.6867 8.27302 16.3454 8.53407L13.1727 11.1244L14.2168 15.0803C14.3574 15.5823 13.7751 15.8634 13.4337 15.6425L9.99998 13.4337L6.56624 15.6425Z" fill="white"/>
             </svg>
+            <!-- Brilliant badge (show after skill is revealed AND brilliant is revealed) -->
+            <div v-if="move.classification && isWhitePlyRevealed(index) && isWhiteBrilliantRevealed(index)" class="brilliant-badge">
+              <CcIcon name="move-exclamation-double" :size="12" color="white" />
+            </div>
             <div 
               :ref="(el) => setPlyRef(index * 2 + 1, el)"
               class="ply-container" 
               :class="{ highlighted: isWhiteSelected(index) }"
             >
-              <span class="ply-text" :class="{ 'skill-text': move.classification && !isWhitePlyRevealed(index) }">{{ move.white }}</span>
+              <span 
+                class="ply-text" 
+                :class="{ 
+                  'skill-text': move.classification && !isWhitePlyRevealed(index),
+                  'brilliant-text': move.classification && isWhitePlyRevealed(index) && isWhiteBrilliantRevealed(index)
+                }"
+              >{{ move.white }}</span>
             </div>
           </div>
           
@@ -273,5 +288,20 @@ watch(() => props.activePly, () => {
 
 .skill-text {
   color: #e3aa24;
+}
+
+.brilliant-badge {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #26C2A3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brilliant-text {
+  color: #26C2A3;
 }
 </style>

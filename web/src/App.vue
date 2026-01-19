@@ -32,6 +32,10 @@ const rookSacrificeCount = ref(0) // Track rook sacrifice skill count (starts at
 const queenSacrificeCount = ref(0) // Track queen sacrifice skill count (starts at 0)
 const revealedSkillPlies = ref([]) // Track which skill plies have been revealed
 
+// Brilliant animation state (triggers after skill animation)
+const brilliantHighlightSquare = ref(null) // Square to highlight with brilliant animation
+const brilliantRevealedPlies = ref([]) // Track which plies have been brilliant-revealed
+
 // Skill earned data - set at trigger time, not reactive during animation
 const skillEarnedData = ref({
   skillName: 'Rook Sacrifice',
@@ -342,30 +346,40 @@ watch(activePly, (newPly, oldPly) => {
     if (newPly === 43 && queenSacrificeCount.value === 0 && !showSkillEarned.value) {
       triggerSkillEarned('f6', 43, 'queen')
     }
+    // If already brilliant-revealed, replay the brilliant animation
+    else if (newPly === 43 && brilliantRevealedPlies.value.includes(43)) {
+      brilliantHighlightSquare.value = 'f6'
+    }
   } else if (newPly > 0) {
     // Moving backward - play a simple move sound for the position we're at
     const moveNotation = getMoveAtPly(newPly)
     playMoveSound(moveNotation)
     
     // Reset skill animation state if going back before the trigger points
-    // But DON'T reset revealedSkillPlies - once revealed, stays revealed
+    // But DON'T reset revealedSkillPlies/brilliantRevealedPlies - once revealed, stays revealed
     if (newPly < 35) {
       showMoveList.value = true
       showSkillEarned.value = false
       skillHighlightSquare.value = null
       showExplosion.value = false
+      brilliantHighlightSquare.value = null
     } else if (newPly < 37) {
       // Going back before second rook sacrifice - close any active animation
       showMoveList.value = true
       showSkillEarned.value = false
       skillHighlightSquare.value = null
       showExplosion.value = false
+      brilliantHighlightSquare.value = null
     } else if (newPly < 43) {
       // Going back before queen sacrifice - close any active animation
       showMoveList.value = true
       showSkillEarned.value = false
       skillHighlightSquare.value = null
       showExplosion.value = false
+      brilliantHighlightSquare.value = null
+    } else if (newPly === 43 && brilliantRevealedPlies.value.includes(43)) {
+      // Landing on brilliant move (going backward) - replay brilliant animation
+      brilliantHighlightSquare.value = 'f6'
     }
   } else {
     // Back to starting position - play a simple move sound
@@ -374,7 +388,8 @@ watch(activePly, (newPly, oldPly) => {
     showSkillEarned.value = false
     skillHighlightSquare.value = null
     showExplosion.value = false
-    // DON'T reset revealedSkillPlies - once revealed, stays revealed
+    brilliantHighlightSquare.value = null
+    // DON'T reset revealedSkillPlies/brilliantRevealedPlies - once revealed, stays revealed
   }
 })
 
@@ -437,24 +452,44 @@ function triggerSkillEarned(square, ply, skillType = 'rook') {
 // Close skill earned and show move list
 function closeSkillEarned() {
   if (showSkillEarned.value) {
+    const savedPly = currentAnimatingPly.value
+    const savedSquare = skillHighlightSquare.value
+    const savedSkillType = currentSkillType.value
+    
     showSkillEarned.value = false
     skillHighlightSquare.value = null
     showExplosion.value = false
+    
     // Wait for slide-out to finish (150ms), THEN update count and fade in move list
     setTimeout(() => {
       // Increment the correct counter based on skill type
-      if (currentSkillType.value === 'queen') {
+      if (savedSkillType === 'queen') {
         queenSacrificeCount.value++
       } else {
         rookSacrificeCount.value++
       }
       // Mark this ply as revealed (no more gold star) - use spread to trigger reactivity
-      if (currentAnimatingPly.value && !revealedSkillPlies.value.includes(currentAnimatingPly.value)) {
-        revealedSkillPlies.value = [...revealedSkillPlies.value, currentAnimatingPly.value]
+      if (savedPly && !revealedSkillPlies.value.includes(savedPly)) {
+        revealedSkillPlies.value = [...revealedSkillPlies.value, savedPly]
       }
+      
       currentAnimatingPly.value = null
       currentSkillType.value = null
       showMoveList.value = true
+      
+      // Only trigger brilliant animation for Queen Sacrifice (Qf6+)
+      if (savedSkillType === 'queen') {
+        // Mark as brilliant revealed (so move list shows teal glyph)
+        if (savedPly && !brilliantRevealedPlies.value.includes(savedPly)) {
+          brilliantRevealedPlies.value = [...brilliantRevealedPlies.value, savedPly]
+        }
+        
+        // Start brilliant board animation after move list fades in (150ms)
+        // Coin persists until user navigates away
+        setTimeout(() => {
+          brilliantHighlightSquare.value = savedSquare
+        }, 150)
+      }
     }, 150)
   }
 }
@@ -534,7 +569,14 @@ onUnmounted(() => {
       </section>
 
       <section class="board-area">
-        <Board :pieces="pieces" :size="375" :skill-highlight="skillHighlightSquare" :skill-highlight-label="skillEarnedData.skillName" :show-explosion="showExplosion" />
+        <Board 
+          :pieces="pieces" 
+          :size="375" 
+          :skill-highlight="skillHighlightSquare" 
+          :skill-highlight-label="skillEarnedData.skillName" 
+          :show-explosion="showExplosion"
+          :brilliant-highlight="brilliantHighlightSquare"
+        />
       </section>
 
       <section class="content-area">
@@ -544,6 +586,7 @@ onUnmounted(() => {
             v-model:active-ply="activePly"
             :show-icons="true"
             :revealed-plies="revealedSkillPlies"
+            :brilliant-revealed-plies="brilliantRevealedPlies"
           />
         </div>
         <SkillEarned
