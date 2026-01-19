@@ -9,6 +9,8 @@ const props = defineProps({
   visible: { type: Boolean, default: false },
 })
 
+const emit = defineEmits(['counter-complete'])
+
 const baseUrl = import.meta.env.BASE_URL
 
 // Animated progress starts at current value, then grows +1
@@ -51,6 +53,11 @@ watch(() => props.visible, (isVisible) => {
       animatedProgress.value = getNextPercent()
       isCounterAnimating.value = true
       animatedCounter.value = props.current + 1
+      
+      // Emit after counter animation completes (500ms)
+      setTimeout(() => {
+        emit('counter-complete')
+      }, 500)
     }, 1550)
   } else {
     // Reset AFTER slide-out completes (150ms) so progress stays during animation

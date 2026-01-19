@@ -44,6 +44,7 @@ const skillIcons = {
   'queen-sacrifice': `${baseUrl}icons/white_queen.png`,
   'rook-sacrifice': `${baseUrl}icons/white_rook.png`,
   'capture': `${baseUrl}icons/capture.png`,
+  'capturing-dark-bishop': `${baseUrl}icons/capturing-dark-bishop.png`,
   'check': `${baseUrl}icons/check.png`,
   'checkmate': `${baseUrl}icons/checkmate-dark.png`,
   'checkmate-dark': `${baseUrl}icons/checkmate-dark.png`,

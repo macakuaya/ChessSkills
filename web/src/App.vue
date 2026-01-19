@@ -15,13 +15,19 @@ import MoveMarker from './components/MoveMarker.vue'
 import MoveClassificationBadge from './components/MoveClassificationBadge.vue'
 import SkillsBottomSheet from './components/SkillsBottomSheet.vue'
 import SkillEarned from './components/SkillEarned.vue'
+import BoardCelebration from './components/BoardCelebration.vue'
 import PrototypeMenu from './components/PrototypeMenu.vue'
 import { parsePGN, calculatePositions, boardToPieces, markBrilliantMoves } from './utils/chess.js'
 
 const activePly = ref(0)
 const showSkillsSheet = ref(false)
 const showPrototypeMenu = ref(false)
-const selectedPrototype = ref('skill-point-earned')
+const selectedPrototype = ref(localStorage.getItem('selectedPrototype') || 'skill-point-earned')
+
+// Persist selected prototype to localStorage
+watch(selectedPrototype, (newVal) => {
+  localStorage.setItem('selectedPrototype', newVal)
+})
 
 // Skill earned animation state
 const showMoveList = ref(true)
@@ -36,6 +42,16 @@ const revealedSkillPlies = ref([]) // Track which skill plies have been revealed
 const captureCount = ref(0)
 const checkCount = ref(0)
 const checkmateCount = ref(0)
+
+// Board celebration state
+const showBoardCelebration = ref(false)
+const boardCelebrationData = ref({
+  image: '',
+  title: 'You Earned a Skill Point',
+  subtitle: 'Keep reviewing until you master every skill'
+})
+const hasShownFirstSkillCelebration = ref(false) // Track if we've shown the first skill celebration
+const showContinueButton = ref(false) // Show Continue button during celebration
 
 // Brilliant animation state (triggers after skill animation)
 const brilliantHighlightSquare = ref(null) // Square to highlight with brilliant animation
@@ -64,7 +80,7 @@ const skillsList = computed(() => [
 
 // FTUE skills list - basic skills for first time user (only first 3 visible)
 const ftueSkillsList = computed(() => [
-  { name: 'Capture', current: captureCount.value, max: 10, icon: 'capture' },
+  { name: 'Capture', current: captureCount.value, max: 10, icon: 'capturing-dark-bishop' },
   { name: 'Check', current: checkCount.value, max: 10, icon: 'check' },
   { name: 'Checkmate', current: checkmateCount.value, max: 10, icon: 'checkmate-dark' },
 ])
@@ -351,6 +367,9 @@ watch(selectedPrototype, () => {
     captureCount.value = 0
     checkCount.value = 0
     checkmateCount.value = 0
+    hasShownFirstSkillCelebration.value = false
+    showBoardCelebration.value = false
+    showContinueButton.value = false
     activePly.value = 0
   }
 })
@@ -410,8 +429,9 @@ watch(activePly, (newPly, oldPly) => {
     // Reset skill animation state if going back before the trigger points
     // But DON'T reset revealedSkillPlies/brilliantRevealedPlies - once revealed, stays revealed
     
-    // Helper to reset animation state
+    // Helper to reset animation state (but not during celebration)
     const resetAnimationState = () => {
+      if (showBoardCelebration.value) return // Don't reset during celebration
       showMoveList.value = true
       showSkillEarned.value = false
       skillHighlightSquare.value = null
@@ -444,11 +464,14 @@ watch(activePly, (newPly, oldPly) => {
   } else {
     // Back to starting position - play a simple move sound
     playSound('move')
-    showMoveList.value = true
-    showSkillEarned.value = false
-    skillHighlightSquare.value = null
-    showExplosion.value = false
-    brilliantHighlightSquare.value = null
+    if (!showBoardCelebration.value) {
+      // Only reset if not in celebration mode
+      showMoveList.value = true
+      showSkillEarned.value = false
+      skillHighlightSquare.value = null
+      showExplosion.value = false
+      brilliantHighlightSquare.value = null
+    }
     // DON'T reset revealedSkillPlies/brilliantRevealedPlies - once revealed, stays revealed
   }
 })
@@ -479,7 +502,7 @@ function triggerSkillEarned(square, ply, skillType = 'rook') {
       skillName: 'Capture',
       current: captureCount.value,
       max: 10,
-      icon: 'capture'
+      icon: 'capturing-dark-bishop'
     }
   } else if (skillType === 'check') {
     skillEarnedData.value = {
@@ -532,6 +555,9 @@ function triggerSkillEarned(square, ply, skillType = 'rook') {
 
 // Close skill earned and show move list
 function closeSkillEarned() {
+  // Don't close during celebration - wait for Continue button
+  if (showBoardCelebration.value) return
+  
   if (showSkillEarned.value) {
     const savedPly = currentAnimatingPly.value
     const savedSquare = skillHighlightSquare.value
@@ -579,6 +605,72 @@ function closeSkillEarned() {
       }
     }, 150)
   }
+}
+
+// Close board celebration
+function closeBoardCelebration() {
+  showBoardCelebration.value = false
+  showContinueButton.value = false
+  showMoveList.value = true
+}
+
+// Handle counter animation complete - show celebration for first skill
+function onCounterComplete() {
+  // Only show celebration for the first skill earned
+  if (!hasShownFirstSkillCelebration.value) {
+    hasShownFirstSkillCelebration.value = true
+    
+    // Show board celebration and continue button
+    boardCelebrationData.value = {
+      image: `${import.meta.env.BASE_URL}icons/skill-point-celebration.png`,
+      title: 'You Earned a Skill Point',
+      subtitle: 'Keep reviewing until you master every skill'
+    }
+    showBoardCelebration.value = true
+    showContinueButton.value = true
+  } else {
+    // For subsequent skills, auto-close after a short delay
+    closeSkillEarned()
+  }
+}
+
+// Handle Continue button click
+function onContinueClick() {
+  const savedPly = currentAnimatingPly.value
+  const savedSquare = skillHighlightSquare.value
+  const savedSkillType = currentSkillType.value
+  
+  // Close celebration and skill earned
+  showBoardCelebration.value = false
+  showContinueButton.value = false
+  showSkillEarned.value = false
+  skillHighlightSquare.value = null
+  showExplosion.value = false
+  
+  // Wait for animations to complete, then update state
+  setTimeout(() => {
+    // Increment the correct counter based on skill type
+    if (savedSkillType === 'queen') {
+      queenSacrificeCount.value++
+    } else if (savedSkillType === 'rook') {
+      rookSacrificeCount.value++
+    } else if (savedSkillType === 'capture') {
+      captureCount.value++
+    } else if (savedSkillType === 'check') {
+      checkCount.value++
+    } else if (savedSkillType === 'checkmate') {
+      checkmateCount.value++
+    }
+    
+    // Mark this ply as revealed
+    if (savedPly && !revealedSkillPlies.value.includes(savedPly)) {
+      revealedSkillPlies.value = [...revealedSkillPlies.value, savedPly]
+    }
+    
+    currentAnimatingPly.value = null
+    currentSkillType.value = null
+    showMoveList.value = true
+  }, 150)
 }
 
 // Handle keyboard events
@@ -656,14 +748,24 @@ onUnmounted(() => {
       </section>
 
       <section class="board-area">
-        <Board 
-          :pieces="pieces" 
-          :size="375" 
-          :skill-highlight="skillHighlightSquare" 
-          :skill-highlight-label="skillEarnedData.skillName" 
-          :show-explosion="showExplosion"
-          :brilliant-highlight="brilliantHighlightSquare"
-        />
+        <div class="board-container">
+          <Board 
+            :pieces="pieces" 
+            :size="375" 
+            :skill-highlight="skillHighlightSquare" 
+            :skill-highlight-label="skillEarnedData.skillName" 
+            :show-explosion="showExplosion"
+            :brilliant-highlight="brilliantHighlightSquare"
+          />
+          
+          <!-- Board Celebration Overlay -->
+          <BoardCelebration
+            :visible="showBoardCelebration"
+            :image="boardCelebrationData.image"
+            :title="boardCelebrationData.title"
+            :subtitle="boardCelebrationData.subtitle"
+          />
+        </div>
       </section>
 
       <section class="content-area">
@@ -682,7 +784,8 @@ onUnmounted(() => {
           :current="skillEarnedData.current"
           :max="skillEarnedData.max"
           :icon="skillEarnedData.icon"
-          :visible="showSkillEarned"
+          :visible="showSkillEarned || showBoardCelebration"
+          @counter-complete="onCounterComplete"
         />
       </section>
 
@@ -706,26 +809,33 @@ onUnmounted(() => {
 
       <footer class="tab-bar">
         <div class="tabs-container">
-          <div class="tab-item" @click="showSkillsSheet = !showSkillsSheet">
-            <div class="tab-icon tab-icon-glyph">
-              <CcIcon :name="glyphs.tabSkills" :size="24" />
+          <!-- Normal tabs OR Continue button -->
+          <template v-if="!showContinueButton">
+            <div class="tab-item" @click="showSkillsSheet = !showSkillsSheet">
+              <div class="tab-icon tab-icon-glyph">
+                <CcIcon :name="glyphs.tabSkills" :size="24" />
+              </div>
+              <span class="tab-label">Skills</span>
             </div>
-            <span class="tab-label">Skills</span>
-          </div>
-          <div class="tab-item">
-            <div class="tab-icon tab-icon-glyph">
-              <CcIcon :name="glyphs.tabShow" :size="24" />
+            <div class="tab-item">
+              <div class="tab-icon tab-icon-glyph">
+                <CcIcon :name="glyphs.tabShow" :size="24" />
+              </div>
+              <span class="tab-label">Show</span>
             </div>
-            <span class="tab-label">Show</span>
-          </div>
-          <div class="tab-item">
-            <div class="tab-icon tab-icon-glyph">
-              <CcIcon :name="glyphs.tabBest" :size="24" />
+            <div class="tab-item">
+              <div class="tab-icon tab-icon-glyph">
+                <CcIcon :name="glyphs.tabBest" :size="24" />
+              </div>
+              <span class="tab-label">Best</span>
             </div>
-            <span class="tab-label">Best</span>
-          </div>
-          <CcButton variant="primary" size="x-large" class="tab-cta-ds" @click="playNextMoves">Next</CcButton>
+            <CcButton variant="primary" size="x-large" class="tab-cta-ds" @click="playNextMoves">Next</CcButton>
+          </template>
+          <template v-else>
+            <CcButton variant="primary" size="x-large" class="tab-cta-ds" @click="onContinueClick">Continue</CcButton>
+          </template>
         </div>
+        
         <div class="home-indicator"></div>
       </footer>
     </div>
@@ -945,6 +1055,12 @@ onUnmounted(() => {
   /* Hugs the board */
 }
 
+.board-container {
+  position: relative;
+  width: 375px;
+  height: 375px;
+}
+
 .content-area {
   flex: 1;
   padding: 0;
@@ -1113,6 +1229,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   padding-bottom: 0;
+  position: relative;
 }
 
 .tabs-container {
