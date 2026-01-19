@@ -14,6 +14,10 @@ const baseUrl = import.meta.env.BASE_URL
 // Animated progress starts at current value, then grows +1
 const animatedProgress = ref(0)
 
+// Animated counter for slot machine effect
+const animatedCounter = ref(0)
+const isCounterAnimating = ref(false)
+
 function getCurrentPercent() {
   return Math.round((props.current / props.max) * 100)
 }
@@ -27,6 +31,8 @@ watch(() => props.visible, (isVisible) => {
   if (isVisible) {
     // Start at current progress (1/10 = 10%)
     animatedProgress.value = getCurrentPercent()
+    animatedCounter.value = props.current
+    isCounterAnimating.value = false
     
     // After explosion completes (~1550ms from visibility), grow +1 point
     // Explosion starts at 1350ms from trigger, lasts 500ms
@@ -34,10 +40,14 @@ watch(() => props.visible, (isVisible) => {
     // So: 1850ms - 300ms = 1550ms from visibility
     setTimeout(() => {
       animatedProgress.value = getNextPercent()
+      isCounterAnimating.value = true
+      animatedCounter.value = props.current + 1
     }, 1550)
   } else {
     // Reset when hidden
     animatedProgress.value = 0
+    animatedCounter.value = 0
+    isCounterAnimating.value = false
   }
 })
 </script>
@@ -60,7 +70,10 @@ watch(() => props.visible, (isVisible) => {
       <div class="skill-header">
         <span class="skill-name">{{ skillName }}</span>
         <span class="skill-counter">
-          <span class="current">{{ current }}</span>
+          <span class="counter-slot" :class="{ animating: isCounterAnimating }">
+            <span class="counter-value previous">{{ current }}</span>
+            <span class="counter-value next">{{ current + 1 }}</span>
+          </span>
           <span class="separator">/</span>
           <span class="max">{{ max }}</span>
         </span>
@@ -161,8 +174,43 @@ watch(() => props.visible, (isVisible) => {
   text-align: right;
 }
 
-.skill-counter .current {
+/* Slot machine counter */
+.counter-slot {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  height: 20px;
+  overflow: hidden;
+}
+
+.counter-value {
   font-weight: 700;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  transition: transform 500ms cubic-bezier(0, 0, 0.2, 1),
+              opacity 500ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.counter-value.previous {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.counter-value.next {
+  opacity: 0;
+  transform: translateY(0);
+}
+
+/* When animating, slide up */
+.counter-slot.animating .counter-value.previous {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+.counter-slot.animating .counter-value.next {
+  opacity: 1;
+  transform: translateY(-20px);
 }
 
 .skill-counter .separator {
