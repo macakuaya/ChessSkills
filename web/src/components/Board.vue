@@ -123,6 +123,7 @@ const getPieceImage = (piece) => {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
+  overflow: hidden;
 }
 
 .square {
@@ -224,46 +225,68 @@ const getPieceImage = (piece) => {
   z-index: 5;
   pointer-events: none;
   filter: drop-shadow(0px 1.2px 0px rgba(0, 0, 0, 0.25));
-  /* Animation: scale up, then move to gold circle at top right */
-  animation: skill-star-animate 800ms cubic-bezier(0, 0, 0.4, 1) forwards;
+  /* Total: 800ms morph + 50ms pause + 500ms fall = 1350ms */
+  animation: skill-star-animate 1350ms cubic-bezier(0.8, 0, 1, 1) forwards;
 }
 
 @keyframes skill-star-animate {
+  /* State 1 (0ms) */
   0% {
     opacity: 0.1;
     width: 20px;
     height: 20px;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) rotate(0deg);
   }
-  37.5% { /* 300ms: State 2 */
+  /* State 2 (300ms = 22.2%) */
+  22.2% {
     opacity: 1;
     width: 24px;
     height: 24px;
     top: 55%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) rotate(0deg);
   }
-  62.5% { /* 500ms: hold */
+  /* Hold State 2 (500ms = 37%) */
+  37% {
     opacity: 1;
     width: 24px;
     height: 24px;
     top: 55%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) rotate(0deg);
   }
-  100% { /* 800ms: State 3 - move to gold pill, shrink to 16px */
+  /* State 3: in gold pill (800ms = 59.3%) */
+  59.3% {
     opacity: 1;
     width: 16px;
     height: 16px;
     top: 4px;
     left: 90%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  /* Hold State 3 - pause before fall (850ms = 63%) */
+  63% {
+    opacity: 1;
+    width: 16px;
+    height: 16px;
+    top: 4px;
+    left: 90%;
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  /* State 4: fall diagonally, rotate -90° (1350ms = 100%) */
+  100% {
+    opacity: 1;
+    width: 16px;
+    height: 16px;
+    top: calc(600% + 10px);
+    left: -170%;
+    transform: translate(-50%, -50%) rotate(-90deg);
   }
 }
 
-/* Skill Label Bubble (transforms from white pill to gold circle) */
+/* Skill Label Bubble (transforms from white pill to gold circle, then falls) */
 .skill-label-bubble {
   position: absolute;
   left: 90%;
@@ -278,42 +301,66 @@ const getPieceImage = (piece) => {
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  /* Smooth animation for all transforming properties */
-  animation: skill-pill-animate 800ms cubic-bezier(0, 0, 0.4, 1) forwards;
+  /* Total: 800ms morph + 50ms pause + 500ms fall = 1350ms */
+  animation: skill-pill-animate 1350ms cubic-bezier(0.8, 0, 1, 1) forwards;
 }
 
 @keyframes skill-pill-animate {
-  /* State 1: centered, faded */
+  /* State 1: centered, faded (0ms) */
   0% {
     opacity: 0;
     top: 50%;
+    left: 90%;
     transform: translate(-50%, -50%);
     max-width: 200px;
     padding: 0 6px;
     background: white;
   }
-  /* State 2: at top, visible, white pill */
-  37.5% {
+  /* State 2: at top, visible, white pill (300ms = 22.2%) */
+  22.2% {
     opacity: 1;
     top: -6px;
+    left: 90%;
     transform: translate(-50%, 0);
     max-width: 200px;
     padding: 0 6px;
     background: white;
   }
-  /* Hold State 2 */
-  62.5% {
+  /* Hold State 2 (500ms = 37%) */
+  37% {
     opacity: 1;
     top: -6px;
+    left: 90%;
     transform: translate(-50%, 0);
     max-width: 200px;
     padding: 0 6px;
     background: white;
   }
-  /* State 3: gold circle - shrink width to 20px */
+  /* State 3: gold circle (800ms = 59.3%) */
+  59.3% {
+    opacity: 1;
+    top: -6px;
+    left: 90%;
+    transform: translate(-50%, 0);
+    max-width: 20px;
+    padding: 0;
+    background: #E3AA24;
+  }
+  /* Hold State 3 - pause before fall (850ms = 63%) */
+  63% {
+    opacity: 1;
+    top: -6px;
+    left: 90%;
+    transform: translate(-50%, 0);
+    max-width: 20px;
+    padding: 0;
+    background: #E3AA24;
+  }
+  /* State 4: fall diagonally to align with progress bar start (1350ms = 100%) */
   100% {
     opacity: 1;
-    top: -6px;
+    top: 600%;
+    left: -170%;
     transform: translate(-50%, 0);
     max-width: 20px;
     padding: 0;
