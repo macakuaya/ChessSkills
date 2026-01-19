@@ -17,6 +17,7 @@ import SkillsBottomSheet from './components/SkillsBottomSheet.vue'
 import SkillEarned from './components/SkillEarned.vue'
 import BoardCelebration from './components/BoardCelebration.vue'
 import PrototypeMenu from './components/PrototypeMenu.vue'
+import SkillUnlockedModal from './components/SkillUnlockedModal.vue'
 import { parsePGN, calculatePositions, boardToPieces, markBrilliantMoves } from './utils/chess.js'
 
 const activePly = ref(0)
@@ -52,6 +53,14 @@ const boardCelebrationData = ref({
 })
 const hasShownFirstSkillCelebration = ref(false) // Track if we've shown the first skill celebration
 const showContinueButton = ref(false) // Show Continue button during celebration
+
+// Skill Unlocked Modal state
+const showSkillUnlockedModal = ref(false)
+const skillUnlockedData = ref({
+  skillName: 'Trapped Piece',
+  skillDescription: 'A piece that has no safe squares to move to and will be captured, usually because it\'s surrounded by enemy pawns or pieces blocking its escape routes.',
+  skillImage: ''
+})
 
 // Brilliant animation state (triggers after skill animation)
 const brilliantHighlightSquare = ref(null) // Square to highlight with brilliant animation
@@ -92,10 +101,18 @@ const endOfFtueSkillsList = computed(() => [
   { name: 'Check', current: 10, max: 10, icon: 'check', completed: true },
 ])
 
+// Mastered Skill skills list - Rook Sacrifice starts at 8/10, will master after 2 sacrifices
+const masteredSkillSkillsList = computed(() => [
+  { name: 'Royal Fork', current: 9, max: 10, icon: 'royal-fork' },
+  { name: 'Rook Sacrifice', current: rookSacrificeCount.value, max: 10, icon: 'rook-sacrifice' },
+  { name: 'Skewer', current: 1, max: 10, icon: null },
+])
+
 // Get current skills list based on prototype
 const currentSkillsList = computed(() => {
   if (selectedPrototype.value === 'ftue') return ftueSkillsList.value
   if (selectedPrototype.value === 'end-of-ftue') return endOfFtueSkillsList.value
+  if (selectedPrototype.value === 'mastered-skill') return masteredSkillSkillsList.value
   return skillsList.value
 })
 
@@ -209,11 +226,13 @@ const evalBarWidths = computed(() => {
 const skillPointEarnedMoves = [18, 19, 22] // Rook sac #1, Rook sac #2, Queen sac
 const ftueMoves = [5, 21, 23] // First capture (Bxb5), First check (Nxg7+), Checkmate (Be7#)
 const endOfFtueMoves = [23] // Only Checkmate (Be7#)
+const masteredSkillMoves = [18, 19] // Rook sac #1, Rook sac #2 (mastery on second)
 
 // Get skill moves based on prototype
 function getSkillMoves() {
   if (selectedPrototype.value === 'ftue') return ftueMoves
   if (selectedPrototype.value === 'end-of-ftue') return endOfFtueMoves
+  if (selectedPrototype.value === 'mastered-skill') return masteredSkillMoves
   return skillPointEarnedMoves
 }
 
@@ -232,8 +251,8 @@ async function loadGame(pgnPath) {
     // Calculate all positions
     positions.value = calculatePositions(gameData.value.moves)
     
-    // Start at position 0 (initial position)
-    activePly.value = 0
+    // Initialize counters based on current prototype (important for page reload)
+    initializePrototypeState(selectedPrototype.value)
   } catch (error) {
     console.error('Failed to load PGN:', error)
   }
@@ -378,26 +397,34 @@ function getMoveAtPly(ply) {
 }
 
 // Watch for prototype changes to update skill moves
+// Initialize counters based on selected prototype
+function initializePrototypeState(prototype) {
+  // Reset animation states
+  revealedSkillPlies.value = []
+  brilliantRevealedPlies.value = []
+  rookSacrificeCount.value = 0
+  queenSacrificeCount.value = 0
+  captureCount.value = 0
+  checkCount.value = 0
+  checkmateCount.value = 0
+  hasShownFirstSkillCelebration.value = false
+  showBoardCelebration.value = false
+  showContinueButton.value = false
+  showSkillUnlockedModal.value = false
+  activePly.value = 0
+  
+  // Set initial state for specific prototypes
+  if (prototype === 'end-of-ftue') {
+    checkmateCount.value = 9 // Start at 9/10
+  } else if (prototype === 'mastered-skill') {
+    rookSacrificeCount.value = 8 // Start at 8/10, will master after 2 sacrifices
+  }
+}
+
 watch(selectedPrototype, (newPrototype) => {
   if (gameData.value) {
     moveList.value = markBrilliantMoves(gameData.value.moves, getSkillMoves())
-    // Reset animation states
-    revealedSkillPlies.value = []
-    brilliantRevealedPlies.value = []
-    rookSacrificeCount.value = 0
-    queenSacrificeCount.value = 0
-    captureCount.value = 0
-    checkCount.value = 0
-    checkmateCount.value = 0
-    hasShownFirstSkillCelebration.value = false
-    showBoardCelebration.value = false
-    showContinueButton.value = false
-    activePly.value = 0
-    
-    // Set initial state for end-of-ftue prototype
-    if (newPrototype === 'end-of-ftue') {
-      checkmateCount.value = 9 // Start at 9/10
-    }
+    initializePrototypeState(newPrototype)
   }
 })
 
@@ -432,6 +459,16 @@ watch(activePly, (newPly, oldPly) => {
       // 23. Be7# (ply 45) - Checkmate (starts at 9/10, goes to 10/10)
       if (newPly === 45 && checkmateCount.value === 9 && !showSkillEarned.value) {
         triggerSkillEarned('e7', 45, 'checkmate')
+      }
+    } else if (selectedPrototype.value === 'mastered-skill') {
+      // Mastered Skill - rook sacrifices starting at 8/10
+      // 18. Bd6 (ply 35) - first rook sacrifice (8 → 9)
+      if (newPly === 35 && rookSacrificeCount.value === 8 && !showSkillEarned.value) {
+        triggerSkillEarned('d6', 35, 'rook')
+      }
+      // 19. e5 (ply 37) - second rook sacrifice (9 → 10, mastery!)
+      if (newPly === 37 && rookSacrificeCount.value === 9 && !showSkillEarned.value) {
+        triggerSkillEarned('e5', 37, 'rook')
       }
     } else {
       // Skill Point Earned triggers
@@ -488,6 +525,13 @@ watch(activePly, (newPly, oldPly) => {
     } else if (selectedPrototype.value === 'end-of-ftue') {
       // End of FTUE skill plies: only 45 (checkmate)
       if (newPly < 45) {
+        resetAnimationState()
+      }
+    } else if (selectedPrototype.value === 'mastered-skill') {
+      // Mastered Skill plies: 35, 37
+      if (newPly < 35) {
+        resetAnimationState()
+      } else if (newPly < 37) {
         resetAnimationState()
       }
     } else {
@@ -656,10 +700,21 @@ function closeBoardCelebration() {
   showMoveList.value = true
 }
 
-// Handle counter animation complete - show celebration for first skill
+// Handle counter animation complete - show celebration for first skill or mastery
 function onCounterComplete() {
-  // Only show celebration for the first skill earned in FTUE prototype
-  if (!hasShownFirstSkillCelebration.value && selectedPrototype.value === 'ftue') {
+  // Check for mastery celebration (skill reaches 10/10)
+  if (selectedPrototype.value === 'mastered-skill' && currentSkillType.value === 'rook' && rookSacrificeCount.value === 9) {
+    // This is the second rook sacrifice, will become 10/10 (mastery!)
+    boardCelebrationData.value = {
+      image: `${import.meta.env.BASE_URL}icons/white_rook.png`,
+      title: 'You mastered a Skill!',
+      subtitle: ''
+    }
+    showBoardCelebration.value = true
+    showContinueButton.value = true
+  }
+  // FTUE first skill celebration
+  else if (!hasShownFirstSkillCelebration.value && selectedPrototype.value === 'ftue') {
     hasShownFirstSkillCelebration.value = true
     
     // Show board celebration and continue button
@@ -682,9 +737,56 @@ function onContinueClick() {
   const savedSquare = skillHighlightSquare.value
   const savedSkillType = currentSkillType.value
   
-  // Close celebration and skill earned
+  // Check if this is a mastery celebration (mastered-skill prototype, second rook sacrifice)
+  const isMasteryCelebration = selectedPrototype.value === 'mastered-skill' && 
+    savedSkillType === 'rook' && 
+    rookSacrificeCount.value === 9
+  
+  if (isMasteryCelebration) {
+    // Transition to "New Skill Unlocked" celebration
+    boardCelebrationData.value = {
+      image: `${import.meta.env.BASE_URL}icons/white_queen.png`,
+      title: 'New Skill Unlocked',
+      subtitle: ''
+    }
+    // Keep buttons visible during transition
+    // showContinueButton.value stays true
+    
+    // After 2000ms, show the hero modal
+    setTimeout(() => {
+      // Close celebration
+      showBoardCelebration.value = false
+      showSkillEarned.value = false
+      skillHighlightSquare.value = null
+      showExplosion.value = false
+      showContinueButton.value = false
+      
+      // Update counter
+      rookSacrificeCount.value++
+      
+      // Mark ply as revealed
+      if (savedPly && !revealedSkillPlies.value.includes(savedPly)) {
+        revealedSkillPlies.value = [...revealedSkillPlies.value, savedPly]
+      }
+      
+      currentAnimatingPly.value = null
+      currentSkillType.value = null
+      
+      // Show the hero modal
+      skillUnlockedData.value = {
+        skillName: 'Trapped Piece',
+        skillDescription: 'A piece that has no safe squares to move to and will be captured, usually because it\'s surrounded by enemy pawns or pieces blocking its escape routes.',
+        skillImage: ''
+      }
+      showSkillUnlockedModal.value = true
+    }, 2000)
+    
+    return
+  }
+  
+  // Default behavior for other celebrations
   showBoardCelebration.value = false
-  showContinueButton.value = false
+  // Keep Share and Continue buttons visible
   showSkillEarned.value = false
   skillHighlightSquare.value = null
   showExplosion.value = false
@@ -713,6 +815,18 @@ function onContinueClick() {
     currentSkillType.value = null
     showMoveList.value = true
   }, 150)
+}
+
+// Handle Skill Unlocked Modal continue
+function onSkillUnlockedContinue() {
+  showSkillUnlockedModal.value = false
+  showMoveList.value = true
+}
+
+// Handle Skill Unlocked Modal close
+function onSkillUnlockedClose() {
+  showSkillUnlockedModal.value = false
+  showMoveList.value = true
 }
 
 // Handle keyboard events
@@ -885,13 +999,24 @@ onUnmounted(() => {
               <CcButton variant="primary" size="x-large" class="tab-cta-ds" @click="playNextMoves">Next</CcButton>
             </div>
             <div v-else key="continue" class="continue-group">
-              <CcButton variant="primary" size="x-large" class="tab-cta-ds" @click="onContinueClick">Continue</CcButton>
+              <cc-button variant="secondary" size="large">Share</cc-button>
+              <cc-button variant="primary" size="large" @click="onContinueClick">Continue</cc-button>
             </div>
           </Transition>
         </div>
         
         <div class="home-indicator"></div>
       </footer>
+
+      <!-- Skill Unlocked Hero Modal -->
+      <SkillUnlockedModal
+        :visible="showSkillUnlockedModal"
+        :skill-name="skillUnlockedData.skillName"
+        :skill-description="skillUnlockedData.skillDescription"
+        :skill-image="skillUnlockedData.skillImage"
+        @continue="onSkillUnlockedContinue"
+        @close="onSkillUnlockedClose"
+      />
     </div>
 
     <!-- Menu button top right -->
@@ -917,6 +1042,11 @@ onUnmounted(() => {
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
+}
+
+/* Design system button overrides */
+button.cc-button-component.cc-button-secondary {
+  color: rgba(255, 255, 255, 0.85);
 }
 </style>
 
@@ -1284,6 +1414,7 @@ onUnmounted(() => {
   flex-direction: column;
   padding-bottom: 0;
   position: relative;
+  z-index: 5;
 }
 
 .tabs-container {
@@ -1291,6 +1422,7 @@ onUnmounted(() => {
   align-items: flex-end;
   gap: 8px;
   padding: 0 12px;
+  height: 56px;
 }
 
 .tabs-group {
@@ -1302,8 +1434,12 @@ onUnmounted(() => {
 
 .continue-group {
   display: flex;
-  justify-content: center;
+  gap: 12px;
   width: 100%;
+}
+
+.continue-group :deep(button) {
+  flex: 1;
 }
 
 /* Tabs/Continue fade transition */
