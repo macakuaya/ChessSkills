@@ -420,6 +420,10 @@ watch(activePly, (newPly, oldPly) => {
       else if (newPly === 43 && brilliantRevealedPlies.value.includes(43)) {
         brilliantHighlightSquare.value = 'f6'
       }
+      // Clear brilliant highlight when moving away from the brilliant move
+      else if (newPly !== 43 && brilliantHighlightSquare.value) {
+        brilliantHighlightSquare.value = null
+      }
     }
   } else if (newPly > 0) {
     // Moving backward - play a simple move sound for the position we're at
@@ -616,8 +620,8 @@ function closeBoardCelebration() {
 
 // Handle counter animation complete - show celebration for first skill
 function onCounterComplete() {
-  // Only show celebration for the first skill earned
-  if (!hasShownFirstSkillCelebration.value) {
+  // Only show celebration for the first skill earned in FTUE prototype
+  if (!hasShownFirstSkillCelebration.value && selectedPrototype.value === 'ftue') {
     hasShownFirstSkillCelebration.value = true
     
     // Show board celebration and continue button
@@ -629,7 +633,7 @@ function onCounterComplete() {
     showBoardCelebration.value = true
     showContinueButton.value = true
   } else {
-    // For subsequent skills, auto-close after a short delay
+    // For subsequent skills or non-FTUE prototypes, auto-close after a short delay
     closeSkillEarned()
   }
 }
@@ -819,31 +823,33 @@ onUnmounted(() => {
 
       <footer class="tab-bar">
         <div class="tabs-container">
-          <!-- Normal tabs OR Continue button -->
-          <template v-if="!showContinueButton">
-            <div class="tab-item" @click="showSkillsSheet = !showSkillsSheet">
-              <div class="tab-icon tab-icon-glyph">
-                <CcIcon :name="glyphs.tabSkills" :size="24" />
+          <!-- Normal tabs OR Continue button with fade transitions -->
+          <Transition name="tabs-fade" mode="out-in">
+            <div v-if="!showContinueButton" key="tabs" class="tabs-group">
+              <div class="tab-item" @click="showSkillsSheet = !showSkillsSheet">
+                <div class="tab-icon tab-icon-glyph">
+                  <CcIcon :name="glyphs.tabSkills" :size="24" />
+                </div>
+                <span class="tab-label">Skills</span>
               </div>
-              <span class="tab-label">Skills</span>
-            </div>
-            <div class="tab-item">
-              <div class="tab-icon tab-icon-glyph">
-                <CcIcon :name="glyphs.tabShow" :size="24" />
+              <div class="tab-item">
+                <div class="tab-icon tab-icon-glyph">
+                  <CcIcon :name="glyphs.tabShow" :size="24" />
+                </div>
+                <span class="tab-label">Show</span>
               </div>
-              <span class="tab-label">Show</span>
-            </div>
-            <div class="tab-item">
-              <div class="tab-icon tab-icon-glyph">
-                <CcIcon :name="glyphs.tabBest" :size="24" />
+              <div class="tab-item">
+                <div class="tab-icon tab-icon-glyph">
+                  <CcIcon :name="glyphs.tabBest" :size="24" />
+                </div>
+                <span class="tab-label">Best</span>
               </div>
-              <span class="tab-label">Best</span>
+              <CcButton variant="primary" size="x-large" class="tab-cta-ds" @click="playNextMoves">Next</CcButton>
             </div>
-            <CcButton variant="primary" size="x-large" class="tab-cta-ds" @click="playNextMoves">Next</CcButton>
-          </template>
-          <template v-else>
-            <CcButton variant="primary" size="x-large" class="tab-cta-ds" @click="onContinueClick">Continue</CcButton>
-          </template>
+            <div v-else key="continue" class="continue-group">
+              <CcButton variant="primary" size="x-large" class="tab-cta-ds" @click="onContinueClick">Continue</CcButton>
+            </div>
+          </Transition>
         </div>
         
         <div class="home-indicator"></div>
@@ -1247,6 +1253,33 @@ onUnmounted(() => {
   align-items: flex-end;
   gap: 8px;
   padding: 0 12px;
+}
+
+.tabs-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.continue-group {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Tabs/Continue fade transition */
+.tabs-fade-enter-active {
+  transition: opacity 150ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.tabs-fade-leave-active {
+  transition: opacity 150ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.tabs-fade-enter-from,
+.tabs-fade-leave-to {
+  opacity: 0;
 }
 
 .tab-item {
