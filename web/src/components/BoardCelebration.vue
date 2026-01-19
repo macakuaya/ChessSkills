@@ -81,10 +81,8 @@ defineProps({
 }
 
 .celebration-image {
-  width: 100%;
-  max-width: 360px;
+  width: 33.33%;
   aspect-ratio: 4 / 3;
-  max-height: 270px;
 }
 
 .celebration-image img {

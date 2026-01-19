@@ -689,6 +689,11 @@ function handleKeydown(event) {
   
   // Arrow keys for move navigation
   if (event.key === 'ArrowRight') {
+    // If celebration is showing, treat as Continue
+    if (showBoardCelebration.value) {
+      onContinueClick()
+      return
+    }
     const totalPlies = positions.value.length - 1
     if (activePly.value < totalPlies) {
       activePly.value++
@@ -696,6 +701,11 @@ function handleKeydown(event) {
   }
   
   if (event.key === 'ArrowLeft') {
+    // If celebration is showing, treat as Continue
+    if (showBoardCelebration.value) {
+      onContinueClick()
+      return
+    }
     if (activePly.value > 0) {
       activePly.value--
     }
