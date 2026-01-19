@@ -28,10 +28,13 @@ watch(() => props.visible, (isVisible) => {
     // Start at current progress (1/10 = 10%)
     animatedProgress.value = getCurrentPercent()
     
-    // After slide-in completes (100ms), grow +1 point (to 2/10 = 20%)
+    // After explosion completes (~1550ms from visibility), grow +1 point
+    // Explosion starts at 1350ms from trigger, lasts 500ms
+    // SkillEarned becomes visible at ~300ms from trigger
+    // So: 1850ms - 300ms = 1550ms from visibility
     setTimeout(() => {
       animatedProgress.value = getNextPercent()
-    }, 100)
+    }, 1550)
   } else {
     // Reset when hidden
     animatedProgress.value = 0
@@ -191,6 +194,6 @@ watch(() => props.visible, (isVisible) => {
   bottom: 0;
   background: #81b64c;
   border-radius: 10px;
-  transition: width 100ms cubic-bezier(0, 0, 0.4, 1);
+  transition: width 500ms cubic-bezier(0, 0, 0.2, 1);
 }
 </style>
