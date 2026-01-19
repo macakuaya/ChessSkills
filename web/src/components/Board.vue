@@ -87,12 +87,12 @@ const getPieceImage = (piece) => {
           <path d="M6.56624 15.6425C6.14456 15.9236 5.64255 15.5622 5.78311 15.0803L6.82729 11.1244L3.6546 8.55415C3.23291 8.21278 3.57427 7.65053 3.9558 7.61037L8.05219 7.38949L9.51805 3.57423C9.59837 3.37342 9.79917 3.23286 10.0201 3.23286C10.2209 3.23286 10.4217 3.35334 10.502 3.57423L11.9678 7.38949L16.0442 7.61037C16.5662 7.63045 16.6867 8.27302 16.3454 8.53407L13.1727 11.1244L14.2168 15.0803C14.3574 15.5823 13.7751 15.8634 13.4337 15.6425L9.99998 13.4337L6.56624 15.6425Z" fill="white"/>
         </svg>
         
-        <!-- Skill Label Bubble -->
+        <!-- Skill Label Bubble (transforms from white pill to gold circle) -->
         <div 
           v-if="hasSkillHighlight(square) && skillHighlightLabel" 
           class="skill-label-bubble"
         >
-          {{ skillHighlightLabel }}
+          <span class="skill-label-text">{{ skillHighlightLabel }}</span>
         </div>
 
         <!-- Piece -->
@@ -197,77 +197,145 @@ const getPieceImage = (piece) => {
   opacity: 0;
   z-index: 2;
   pointer-events: none;
-  animation: skill-highlight-fade-in 300ms cubic-bezier(0, 0, 0.4, 1) forwards;
+  animation: skill-overlay-animate 800ms cubic-bezier(0, 0, 0.4, 1) forwards;
 }
 
-@keyframes skill-highlight-fade-in {
-  from {
+@keyframes skill-overlay-animate {
+  /* State 1 → State 2: fade in */
+  0% {
     opacity: 0;
   }
-  to {
+  37.5% { /* 300ms */
     opacity: 0.8;
+  }
+  /* Hold until 500ms (62.5%) */
+  62.5% {
+    opacity: 0.8;
+  }
+  /* State 2 → State 3: fade out */
+  100% { /* 800ms */
+    opacity: 0;
   }
 }
 
 /* Skill Star Icon */
 .skill-star-icon {
   position: absolute;
-  left: 50%;
-  z-index: 3;
+  z-index: 5;
   pointer-events: none;
   filter: drop-shadow(0px 1.2px 0px rgba(0, 0, 0, 0.25));
-  /* Animation: scale 20px → 24px, move from center to slightly below center, fade in */
-  animation: skill-star-animate 300ms cubic-bezier(0, 0, 0.4, 1) forwards;
+  /* Animation: scale up, then move to gold circle at top right */
+  animation: skill-star-animate 800ms cubic-bezier(0, 0, 0.4, 1) forwards;
 }
 
 @keyframes skill-star-animate {
-  from {
+  0% {
     opacity: 0.1;
     width: 20px;
     height: 20px;
     top: 50%;
+    left: 50%;
     transform: translate(-50%, -50%);
   }
-  to {
+  37.5% { /* 300ms: State 2 */
     opacity: 1;
     width: 24px;
     height: 24px;
     top: 55%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  62.5% { /* 500ms: hold */
+    opacity: 1;
+    width: 24px;
+    height: 24px;
+    top: 55%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  100% { /* 800ms: State 3 - move to gold pill, shrink to 16px */
+    opacity: 1;
+    width: 16px;
+    height: 16px;
+    top: 4px;
+    left: 90%;
     transform: translate(-50%, -50%);
   }
 }
 
-/* Skill Label Bubble */
+/* Skill Label Bubble (transforms from white pill to gold circle) */
 .skill-label-bubble {
   position: absolute;
   left: 90%;
+  top: -6px;
+  height: 20px;
   z-index: 4;
   pointer-events: none;
-  background: white;
-  padding: 0 6px;
-  border-radius: 10px;
   box-shadow: 0px 1.1px 0px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  /* Smooth animation for all transforming properties */
+  animation: skill-pill-animate 800ms cubic-bezier(0, 0, 0.4, 1) forwards;
+}
+
+@keyframes skill-pill-animate {
+  /* State 1: centered, faded */
+  0% {
+    opacity: 0;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 200px;
+    padding: 0 6px;
+    background: white;
+  }
+  /* State 2: at top, visible, white pill */
+  37.5% {
+    opacity: 1;
+    top: -6px;
+    transform: translate(-50%, 0);
+    max-width: 200px;
+    padding: 0 6px;
+    background: white;
+  }
+  /* Hold State 2 */
+  62.5% {
+    opacity: 1;
+    top: -6px;
+    transform: translate(-50%, 0);
+    max-width: 200px;
+    padding: 0 6px;
+    background: white;
+  }
+  /* State 3: gold circle - shrink width to 20px */
+  100% {
+    opacity: 1;
+    top: -6px;
+    transform: translate(-50%, 0);
+    max-width: 20px;
+    padding: 0;
+    background: #E3AA24;
+  }
+}
+
+/* Text inside the pill - fades out */
+.skill-label-text {
   font-family: 'Chess Sans', system-ui, sans-serif;
   font-size: 11px;
   font-weight: 800;
   line-height: 20px;
-  color: #cf8d1b; /* color-gold-400 */
+  color: #cf8d1b;
   white-space: nowrap;
-  /* Center of pill anchored at 90%, grows equally left and right */
-  /* Animation: move from center to top, fade in */
-  animation: skill-label-animate 300ms cubic-bezier(0, 0, 0.4, 1) forwards;
+  animation: skill-text-fade 800ms cubic-bezier(0, 0, 0.4, 1) forwards;
 }
 
-@keyframes skill-label-animate {
-  from {
-    opacity: 0.1;
-    top: 50%;
-    transform: translate(-50%, -50%);
-  }
-  to {
-    opacity: 1;
-    top: -6px;
-    transform: translate(-50%, 0);
-  }
+@keyframes skill-text-fade {
+  0% { opacity: 0; }
+  37.5% { opacity: 1; }
+  62.5% { opacity: 1; }
+  100% { opacity: 0; }
 }
 </style>
