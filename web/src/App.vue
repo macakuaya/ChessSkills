@@ -25,6 +25,7 @@ const showSkillsSheet = ref(false)
 const showMoveList = ref(true)
 const showSkillEarned = ref(false)
 const skillHighlightSquare = ref(null) // Square to highlight on board (e.g., 'd6')
+const showExplosion = ref(false) // Show explosion circle after coin falls
 const skillEarnedData = ref({
   skillName: 'Pawns in the Center',
   current: 1,
@@ -321,6 +322,7 @@ watch(activePly, (newPly, oldPly) => {
       showMoveList.value = true
       showSkillEarned.value = false
       skillHighlightSquare.value = null
+      showExplosion.value = false
     }
   } else {
     // Back to starting position - play a simple move sound
@@ -328,6 +330,7 @@ watch(activePly, (newPly, oldPly) => {
     showMoveList.value = true
     showSkillEarned.value = false
     skillHighlightSquare.value = null
+    showExplosion.value = false
   }
 })
 
@@ -346,6 +349,11 @@ function triggerSkillEarned() {
       showSkillEarned.value = true
     }, 100)
   }, 200)
+  
+  // Show explosion after coin animation completes (1350ms)
+  setTimeout(() => {
+    showExplosion.value = true
+  }, 1350)
 }
 
 // Close skill earned and show move list
@@ -353,6 +361,7 @@ function closeSkillEarned() {
   if (showSkillEarned.value) {
     showSkillEarned.value = false
     skillHighlightSquare.value = null
+    showExplosion.value = false
     setTimeout(() => {
       showMoveList.value = true
     }, 100)
@@ -370,6 +379,20 @@ function handleKeydown(event) {
     // Close skills bottom sheet
     if (showSkillsSheet.value) {
       showSkillsSheet.value = false
+    }
+  }
+  
+  // Arrow keys for move navigation
+  if (event.key === 'ArrowRight') {
+    const totalPlies = positions.value.length - 1
+    if (activePly.value < totalPlies) {
+      activePly.value++
+    }
+  }
+  
+  if (event.key === 'ArrowLeft') {
+    if (activePly.value > 0) {
+      activePly.value--
     }
   }
 }
@@ -420,7 +443,7 @@ onUnmounted(() => {
       </section>
 
       <section class="board-area">
-        <Board :pieces="pieces" :size="375" :skill-highlight="skillHighlightSquare" :skill-highlight-label="skillEarnedData.skillName" />
+        <Board :pieces="pieces" :size="375" :skill-highlight="skillHighlightSquare" :skill-highlight-label="skillEarnedData.skillName" :show-explosion="showExplosion" />
       </section>
 
       <section class="content-area">

@@ -8,6 +8,7 @@ const props = defineProps({
   lastMove: { type: Object, default: null }, // { from: 'e2', to: 'e4' }
   skillHighlight: { type: String, default: null }, // Square to highlight with skill animation (e.g., 'd6')
   skillHighlightLabel: { type: String, default: null }, // Label text for skill highlight (e.g., 'Skewer')
+  showExplosion: { type: Boolean, default: false }, // Show the explosion circle
 })
 
 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
@@ -111,12 +112,49 @@ const getPieceImage = (piece) => {
         <span v-if="square[0] === 'a'" class="coord rank-coord">{{ square[1] }}</span>
       </div>
     </div>
+    
+    <!-- Explosion Circle (appears where coin disappeared) -->
+    <div 
+      v-if="showExplosion" 
+      class="explosion-circle"
+    ></div>
   </div>
 </template>
 
 <style scoped>
 .board-wrapper {
   display: inline-block;
+  position: relative;
+}
+
+/* Explosion Circle - appears where coin disappeared */
+.explosion-circle {
+  position: absolute;
+  background: #E3AA24;
+  border-radius: 50%;
+  /* Center at bottom edge of board - creates semicircle effect */
+  left: 60px;
+  top: 100%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+  /* Clip top half so only bottom semicircle shows */
+  clip-path: inset(50% 0 0 0);
+  /* Animation: grow from 34px to 280px, fade out */
+  animation: explosion-expand 500ms cubic-bezier(0, 0, 0.4, 1) forwards;
+}
+
+@keyframes explosion-expand {
+  0% {
+    width: 34px;
+    height: 34px;
+    opacity: 1;
+  }
+  100% {
+    width: 280px;
+    height: 280px;
+    opacity: 0;
+  }
 }
 
 .board {
