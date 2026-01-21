@@ -40,15 +40,15 @@ const tabs = [
 // Skill icon paths
 const baseUrl = import.meta.env.BASE_URL
 const skillIcons = {
-  'royal-fork': `${baseUrl}icons/skill-fork.svg`,
-  'queen-sacrifice': `${baseUrl}icons/white_queen.png`,
-  'rook-sacrifice': `${baseUrl}icons/white_rook.png`,
-  'capture': `${baseUrl}icons/capture.png`,
-  'capturing-dark-bishop': `${baseUrl}icons/capturing-dark-bishop.png`,
-  'check': `${baseUrl}icons/check.png`,
-  'checkmate': `${baseUrl}icons/checkmate-dark.png`,
-  'checkmate-dark': `${baseUrl}icons/checkmate-dark.png`,
-  'castle': `${baseUrl}icons/castle.png`,
+  'royal-fork': `${baseUrl}icons/skills/skill-fork.svg`,
+  'queen-sacrifice': `${baseUrl}icons/skills/white_queen.png`,
+  'rook-sacrifice': `${baseUrl}icons/skills/white_rook.png`,
+  'capture': `${baseUrl}icons/skills/capture.png`,
+  'capturing-dark-bishop': `${baseUrl}icons/skills/capturing-dark-bishop.png`,
+  'check': `${baseUrl}icons/skills/check.png`,
+  'checkmate': `${baseUrl}icons/skills/checkmate-dark.png`,
+  'checkmate-dark': `${baseUrl}icons/skills/checkmate-dark.png`,
+  'castle': `${baseUrl}icons/skills/castle.png`,
 }
 
 function getProgressPercent(current, max) {

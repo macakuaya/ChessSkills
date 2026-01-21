@@ -371,8 +371,8 @@ const glyphs = {
 
 // Legacy icons (not in design system)
 const navIcons = {
-  statusRight: `${baseUrl}icons/status-right.svg`,
-  brilliant: `${baseUrl}icons/brilliant.svg`,
+  statusRight: `${baseUrl}icons/misc/status-right.svg`,
+  brilliant: `${baseUrl}icons/misc/brilliant.svg`,
 }
 
 // Chess sounds from design system CDN
@@ -753,7 +753,7 @@ function onCounterComplete() {
   if (selectedPrototype.value === 'mastered-skill' && currentSkillType.value === 'rook' && rookSacrificeCount.value === 9) {
     // This is the second rook sacrifice, will become 10/10 (mastery!)
     boardCelebrationData.value = {
-      image: `${import.meta.env.BASE_URL}icons/white_rook.png`,
+      image: `${import.meta.env.BASE_URL}icons/skills/white_rook.png`,
       title: 'You mastered a Skill!',
       subtitle: ''
     }
@@ -763,7 +763,7 @@ function onCounterComplete() {
   // All Skills Mastered celebration (queen sacrifice completes ALL skills)
   else if (selectedPrototype.value === 'all-skills-mastered' && currentSkillType.value === 'queen' && queenSacrificeCount.value === 9) {
     boardCelebrationData.value = {
-      image: `${import.meta.env.BASE_URL}icons/white_queen.png`,
+      image: `${import.meta.env.BASE_URL}icons/skills/white_queen.png`,
       title: 'You mastered a Skill!',
       subtitle: ''
     }
@@ -786,7 +786,7 @@ function onCounterComplete() {
     
     // Show board celebration and continue button
     boardCelebrationData.value = {
-      image: `${import.meta.env.BASE_URL}icons/skill-point-celebration.png`,
+      image: `${import.meta.env.BASE_URL}icons/skills/skill-point-celebration.png`,
       title: 'You Earned a Skill Point',
       subtitle: 'Keep reviewing until you master every skill'
     }
@@ -883,7 +883,7 @@ function onContinueClick() {
   if (isMasteryCelebration) {
     // Transition to "New Skill Unlocked" celebration
     boardCelebrationData.value = {
-      image: `${import.meta.env.BASE_URL}icons/white_queen.png`,
+      image: `${import.meta.env.BASE_URL}icons/skills/white_queen.png`,
       title: 'New Skill Unlocked',
       subtitle: ''
     }
