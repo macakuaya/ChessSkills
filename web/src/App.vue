@@ -49,6 +49,7 @@ const boardCelebrationData = ref({
 const hasShownFirstSkillCelebration = ref(false) // Track if we've shown the first skill celebration
 const showContinueButton = ref(false) // Show Continue button during celebration
 const endOfFtueCompleted = ref(false) // Track if End of FTUE celebration has been completed
+const allSkillsMasteredCompleted = ref(false) // Track if All Skills Mastered celebration has been completed
 
 // Skill Unlocked Modal state
 const showSkillUnlockedModal = ref(false)
@@ -121,7 +122,7 @@ const masteredSkillSkillsList = computed(() => [
 
 // All Skills Mastered skills list - All skills completed except Queen Sacrifice at 9/10
 const allSkillsMasteredSkillsList = computed(() => [
-  { name: 'Queen Sacrifice', current: queenSacrificeCount.value, max: 10, icon: 'queen-sacrifice' },
+  { name: 'Queen Sacrifice', current: queenSacrificeCount.value, max: 10, icon: 'queen-sacrifice', completed: allSkillsMasteredCompleted.value },
   { name: 'Royal Fork', current: 10, max: 10, icon: 'royal-fork', completed: true },
   { name: 'Rook Sacrifice', current: 10, max: 10, icon: 'rook-sacrifice', completed: true },
   { name: 'Skewer', current: 10, max: 10, icon: 'skewer', completed: true },
@@ -445,6 +446,7 @@ function initializePrototypeState(prototype) {
   showContinueButton.value = false
   showSkillUnlockedModal.value = false
   endOfFtueCompleted.value = false
+  allSkillsMasteredCompleted.value = false
   activePly.value = 0
   
   // Set initial state for specific prototypes
@@ -964,6 +966,11 @@ function onContinueClick() {
 function onSkillUnlockedContinue() {
   showSkillUnlockedModal.value = false
   showMoveList.value = true
+  
+  // Mark All Skills Mastered as completed so Queen Sacrifice shows as completed
+  if (selectedPrototype.value === 'all-skills-mastered') {
+    allSkillsMasteredCompleted.value = true
+  }
 }
 
 // Handle Skill Unlocked Modal close
