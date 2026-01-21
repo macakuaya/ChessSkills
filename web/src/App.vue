@@ -53,6 +53,7 @@ const boardCelebrationData = ref({
 })
 const hasShownFirstSkillCelebration = ref(false) // Track if we've shown the first skill celebration
 const showContinueButton = ref(false) // Show Continue button during celebration
+const endOfFtueCompleted = ref(false) // Track if End of FTUE celebration has been completed
 
 // Skill Unlocked Modal state
 const showSkillUnlockedModal = ref(false)
@@ -76,16 +77,17 @@ const skillEarnedData = ref({
 })
 
 // Skills list for bottom sheet (reactive to earned skills)
+// Only Royal Fork, Queen Sacrifice, Rook Sacrifice are active - rest are locked
 const skillsList = computed(() => [
   { name: 'Royal Fork', current: 9, max: 10, icon: 'royal-fork' },
   { name: 'Queen Sacrifice', current: queenSacrificeCount.value, max: 10, icon: 'queen-sacrifice' },
   { name: 'Rook Sacrifice', current: rookSacrificeCount.value, max: 10, icon: 'rook-sacrifice' },
-  { name: 'Skewer', current: 0, max: 10, icon: null },
-  { name: 'Knight Fork', current: 0, max: 10, icon: null },
-  { name: 'Fork', current: 0, max: 10, icon: null },
-  { name: 'Defend Piece', current: 0, max: 10, icon: null },
-  { name: 'Check', current: 0, max: 10, icon: null },
-  { name: 'Capture', current: 0, max: 10, icon: null },
+  { name: 'Skewer', current: 0, max: 10, icon: null, locked: true },
+  { name: 'Knight Fork', current: 0, max: 10, icon: null, locked: true },
+  { name: 'Fork', current: 0, max: 10, icon: null, locked: true },
+  { name: 'Defend Piece', current: 0, max: 10, icon: null, locked: true },
+  { name: 'Check', current: 0, max: 10, icon: null, locked: true },
+  { name: 'Capture', current: 0, max: 10, icon: null, locked: true },
 ])
 
 // FTUE skills list - basic skills for first time user (only first 3 visible)
@@ -100,6 +102,19 @@ const endOfFtueSkillsList = computed(() => [
   { name: 'Checkmate', current: checkmateCount.value, max: 10, icon: 'checkmate-dark' },
   { name: 'Capture', current: 10, max: 10, icon: 'capturing-dark-bishop', completed: true },
   { name: 'Check', current: 10, max: 10, icon: 'check', completed: true },
+])
+
+// End of FTUE skills list AFTER celebration - new skills unlocked with tabs
+const endOfFtueAfterCelebrationSkillsList = computed(() => [
+  { name: 'Recapture', current: 0, max: 10, icon: 'capturing-dark-bishop' },
+  { name: 'Winning Capture', current: 0, max: 10, icon: 'capturing-dark-bishop' },
+  { name: 'Blocks Attack', current: 0, max: 10, icon: 'check' },
+  { name: 'Skewer', current: 0, max: 10, icon: null, locked: true },
+  { name: 'Knight Fork', current: 0, max: 10, icon: null, locked: true },
+  { name: 'Fork', current: 0, max: 10, icon: null, locked: true },
+  { name: 'Defend Piece', current: 0, max: 10, icon: null, locked: true },
+  { name: 'Royal Fork', current: 0, max: 10, icon: null, locked: true },
+  { name: 'Pin', current: 0, max: 10, icon: null, locked: true },
 ])
 
 // Mastered Skill skills list - Rook Sacrifice starts at 8/10, will master after 2 sacrifices
@@ -125,15 +140,21 @@ const allSkillsMasteredSkillsList = computed(() => [
 // Get current skills list based on prototype
 const currentSkillsList = computed(() => {
   if (selectedPrototype.value === 'ftue') return ftueSkillsList.value
-  if (selectedPrototype.value === 'end-of-ftue') return endOfFtueSkillsList.value
+  if (selectedPrototype.value === 'end-of-ftue') {
+    // After celebration, show new unlocked skills with tabs
+    if (endOfFtueCompleted.value) return endOfFtueAfterCelebrationSkillsList.value
+    return endOfFtueSkillsList.value
+  }
   if (selectedPrototype.value === 'mastered-skill') return masteredSkillSkillsList.value
   if (selectedPrototype.value === 'all-skills-mastered') return allSkillsMasteredSkillsList.value
   return skillsList.value
 })
 
-// Check if tabs should be shown (hidden for FTUE-style prototypes)
+// Check if tabs should be shown (hidden for FTUE-style prototypes, but shown after End of FTUE celebration)
 const showSkillsTabs = computed(() => {
-  return selectedPrototype.value !== 'ftue' && selectedPrototype.value !== 'end-of-ftue'
+  if (selectedPrototype.value === 'ftue') return false
+  if (selectedPrototype.value === 'end-of-ftue') return endOfFtueCompleted.value
+  return true
 })
 
 // Game data
@@ -428,6 +449,7 @@ function initializePrototypeState(prototype) {
   showBoardCelebration.value = false
   showContinueButton.value = false
   showSkillUnlockedModal.value = false
+  endOfFtueCompleted.value = false
   activePly.value = 0
   
   // Set initial state for specific prototypes
@@ -753,6 +775,16 @@ function onCounterComplete() {
     showBoardCelebration.value = true
     showContinueButton.value = true
   }
+  // End of FTUE celebration (checkmate completes the tutorial)
+  else if (selectedPrototype.value === 'end-of-ftue' && currentSkillType.value === 'checkmate' && checkmateCount.value === 9) {
+    boardCelebrationData.value = {
+      image: 'https://www.chess.com/bundles/web/images/color-icons/commerce-gold.svg',
+      title: 'New Skills Unlocked!',
+      subtitle: ''
+    }
+    showBoardCelebration.value = true
+    showContinueButton.value = true
+  }
   // FTUE first skill celebration
   else if (!hasShownFirstSkillCelebration.value && selectedPrototype.value === 'ftue') {
     hasShownFirstSkillCelebration.value = true
@@ -787,6 +819,37 @@ function onContinueClick() {
     savedSkillType === 'queen' && 
     queenSacrificeCount.value === 9
   
+  // Check if this is an "end of FTUE" celebration (checkmate completes tutorial)
+  const isEndOfFtue = selectedPrototype.value === 'end-of-ftue' && 
+    savedSkillType === 'checkmate' && 
+    checkmateCount.value === 9
+
+  if (isEndOfFtue) {
+    // Close celebration and return to normal state
+    showSkillEarned.value = false
+    skillHighlightSquare.value = null
+    showExplosion.value = false
+    showContinueButton.value = false
+    showBoardCelebration.value = false
+    
+    // Update counter
+    checkmateCount.value++
+    
+    // Mark End of FTUE as completed - this enables tabs and shows new skills
+    endOfFtueCompleted.value = true
+    
+    // Mark ply as revealed
+    if (savedPly && !revealedSkillPlies.value.includes(savedPly)) {
+      revealedSkillPlies.value = [...revealedSkillPlies.value, savedPly]
+    }
+    
+    currentAnimatingPly.value = null
+    currentSkillType.value = null
+    showMoveList.value = true
+    
+    return
+  }
+
   if (isAllSkillsMastered) {
     // Go directly to the hero modal (no intermediate overlay)
     showSkillEarned.value = false
@@ -1084,7 +1147,7 @@ onUnmounted(() => {
               <CcButton variant="primary" size="x-large" class="tab-cta-ds" @click="playNextMoves">Next</CcButton>
             </div>
             <div v-else key="continue" class="continue-group">
-              <cc-button variant="secondary" size="large">Share</cc-button>
+              <cc-button v-if="selectedPrototype !== 'end-of-ftue'" variant="secondary" size="large">Share</cc-button>
               <cc-button variant="primary" size="large" @click="onContinueClick">Continue</cc-button>
             </div>
           </Transition>
