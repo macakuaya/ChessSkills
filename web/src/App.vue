@@ -372,7 +372,7 @@ const glyphs = {
 // Legacy icons (not in design system)
 const navIcons = {
   statusRight: `${baseUrl}icons/misc/status-right.svg`,
-  brilliant: `${baseUrl}icons/misc/brilliant.svg`,
+  brilliant: `${baseUrl}icons/move-classifications/brilliant.svg`,
 }
 
 // Chess sounds from design system CDN

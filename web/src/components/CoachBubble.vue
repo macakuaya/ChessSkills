@@ -12,7 +12,7 @@ const props = defineProps({
 })
 
 // Default to brilliant icon if no icon specified
-const iconSrc = computed(() => props.headerIcon || `${base}icons/misc/brilliant.svg`)
+const iconSrc = computed(() => props.headerIcon || `${base}icons/move-classifications/brilliant.svg`)
 const avatarSrc = `${base}icons/misc/coach-avatar.png`
 const tipSrc = `${base}icons/misc/bubble-tip.svg`
 </script>
