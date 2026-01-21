@@ -57,8 +57,8 @@ const showContinueButton = ref(false) // Show Continue button during celebration
 // Skill Unlocked Modal state
 const showSkillUnlockedModal = ref(false)
 const skillUnlockedData = ref({
-  skillName: 'Trapped Piece',
-  skillDescription: 'A piece that has no safe squares to move to and will be captured, usually because it\'s surrounded by enemy pawns or pieces blocking its escape routes.',
+  skillName: 'Queen Sacrifice',
+  skillDescription: 'A tactical move where you deliberately give up your queen to gain a decisive advantage, often leading to checkmate or winning material back.',
   skillImage: '',
   showShareButton: false
 })
@@ -853,8 +853,8 @@ function onContinueClick() {
       
       // Show the hero modal
       skillUnlockedData.value = {
-        skillName: 'Trapped Piece',
-        skillDescription: 'A piece that has no safe squares to move to and will be captured, usually because it\'s surrounded by enemy pawns or pieces blocking its escape routes.',
+        skillName: 'Queen Sacrifice',
+        skillDescription: 'A tactical move where you deliberately give up your queen to gain a decisive advantage, often leading to checkmate or winning material back.',
         skillImage: '',
         showShareButton: false
       }

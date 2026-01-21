@@ -8,11 +8,11 @@ const props = defineProps({
   },
   skillName: {
     type: String,
-    default: 'Trapped Piece'
+    default: 'Queen Sacrifice'
   },
   skillDescription: {
     type: String,
-    default: 'A piece that has no safe squares to move to and will be captured, usually because it\'s surrounded by enemy pawns or pieces blocking its escape routes.'
+    default: 'A tactical move where you deliberately give up your queen to gain a decisive advantage, often leading to checkmate or winning material back.'
   },
   skillImage: {
     type: String,
