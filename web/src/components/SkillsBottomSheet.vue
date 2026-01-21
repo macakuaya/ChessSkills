@@ -148,7 +148,7 @@ function onTapToggle() {
         >
           <!-- Skill Icon -->
           <div class="skill-icon">
-            <img v-if="skill.icon" :src="skillIcons[skill.icon]" :alt="skill.name" />
+            <img v-if="skill.icon && skillIcons[skill.icon]" :src="skillIcons[skill.icon]" :alt="skill.name" />
             <div v-else class="skill-icon-placeholder">
               <svg viewBox="0 0 44 44" fill="none">
                 <rect x="2" y="2" width="40" height="40" rx="2" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-dasharray="4 4" fill="none"/>
