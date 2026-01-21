@@ -9,10 +9,8 @@ import CoachBubble from './components/CoachBubble.vue'
 import Board from './components/Board.vue'
 import MoveListBar from './components/MoveListBar.vue'
 import SkillsBottomSheet from './components/SkillsBottomSheet.vue'
-import SkillEarned from './components/SkillEarned.vue'
-import BoardCelebration from './components/BoardCelebration.vue'
 import PrototypeMenu from './components/PrototypeMenu.vue'
-import SkillUnlockedModal from './components/SkillUnlockedModal.vue'
+import { BoardCelebration, SkillEarned, SkillUnlockedModal, playSound } from '@chess/components'
 import { parsePGN, calculatePositions, boardToPieces, markBrilliantMoves } from './utils/chess.js'
 
 const activePly = ref(0)
@@ -69,7 +67,7 @@ const skillEarnedData = ref({
   skillName: 'Rook Sacrifice',
   current: 0,
   max: 10,
-  icon: 'white_rook' // White rook icon for rook sacrifice skill
+  iconSrc: `${import.meta.env.BASE_URL}icons/skills/white_rook.png`
 })
 
 // Skills list for bottom sheet (reactive to earned skills)
@@ -376,27 +374,7 @@ const navIcons = {
   brilliant: `${baseUrl}icons/move-classifications/brilliant.svg`,
 }
 
-// Chess sounds from design system CDN
-const SOUND_BASE_URL = 'https://www.chess.com/bundles/web/sounds/mp3/'
-const SOUND_FILES = {
-  move: 'move-self.mp3',
-  capture: 'capture.mp3',
-  castle: 'castle.mp3',
-  check: 'move-check.mp3',
-  promote: 'promote.mp3',
-}
-
-// Play sound by type (creates audio on demand for better browser support)
-function playSound(type) {
-  const file = SOUND_FILES[type]
-  if (!file) return
-  
-  const audio = new Audio(`${SOUND_BASE_URL}${file}`)
-  audio.volume = 0.7
-  audio.play()
-    .then(() => console.log(`Played ${type} sound`))
-    .catch(err => console.warn(`Failed to play ${type}:`, err.message))
-}
+// playSound imported from @chess/components
 
 // Play sound based on move notation
 function playMoveSound(moveStr) {
@@ -623,35 +601,35 @@ function triggerSkillEarned(square, ply, skillType = 'rook') {
       skillName: 'Queen Sacrifice',
       current: queenSacrificeCount.value,
       max: 10,
-      icon: 'white_queen'
+      iconSrc: `${baseUrl}icons/skills/white_queen.png`
     }
   } else if (skillType === 'rook') {
     skillEarnedData.value = {
       skillName: 'Rook Sacrifice',
       current: rookSacrificeCount.value,
       max: 10,
-      icon: 'white_rook'
+      iconSrc: `${baseUrl}icons/skills/white_rook.png`
     }
   } else if (skillType === 'capture') {
     skillEarnedData.value = {
       skillName: 'Capture',
       current: captureCount.value,
       max: 10,
-      icon: 'capturing-dark-bishop'
+      iconSrc: `${baseUrl}icons/skills/capturing-dark-bishop.png`
     }
   } else if (skillType === 'check') {
     skillEarnedData.value = {
       skillName: 'Check',
       current: checkCount.value,
       max: 10,
-      icon: 'check'
+      iconSrc: `${baseUrl}icons/skills/check.png`
     }
   } else if (skillType === 'checkmate') {
     skillEarnedData.value = {
       skillName: 'Checkmate',
       current: checkmateCount.value,
       max: 10,
-      icon: 'checkmate-dark'
+      iconSrc: `${baseUrl}icons/skills/checkmate-dark.png`
     }
   }
   
@@ -1099,7 +1077,7 @@ onUnmounted(() => {
           :skill-name="skillEarnedData.skillName"
           :current="skillEarnedData.current"
           :max="skillEarnedData.max"
-          :icon="skillEarnedData.icon"
+          :icon-src="skillEarnedData.iconSrc"
           :visible="showSkillEarned || showBoardCelebration"
           @counter-complete="onCounterComplete"
         />
