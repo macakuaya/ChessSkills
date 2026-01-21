@@ -75,7 +75,7 @@ watch(() => props.visible, (isVisible) => {
   <div class="skill-earned" :class="{ visible }">
     <!-- Skill Icon -->
     <div class="skill-icon">
-      <img v-if="icon" :src="`${baseUrl}icons/${icon}.png`" :alt="skillName" />
+      <img v-if="icon" :src="`${baseUrl}icons/skills/${icon}.png`" :alt="skillName" />
       <div v-else class="skill-icon-placeholder">
         <svg viewBox="0 0 40 40" fill="none">
           <rect x="2" y="2" width="36" height="36" rx="2" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-dasharray="4 4" fill="none"/>
